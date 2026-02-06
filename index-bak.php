@@ -53,45 +53,43 @@
               <h2 class="text-4xl font-bold text-blue-600">฿<span id="grandTotal">0.00</span></h2>
             </div>
           </div>
-          <button onclick="submitOrder()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-xl font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95">
-            <i class="fas fa-print mr-2"></i> ยืนยันการขาย (Print)
-          </button>
+          <button onclick="submitOrder()" class="w-full bg-emerald-500 text-white text-xl font-bold py-4 rounded-xl shadow-lg">ยืนยันการขาย</button>
         </div>
       </div>
     </div>
   </main>
 
   <script>
-    // กำหนด API URL ให้ชัดเจน (เผื่อไม่ได้ประกาศใน footer)
-    const API_URL = 'api/basic_api.php';
-
     let cart = [];
     let currentMember = null;
 
-    // --- Startup ---
+    // --- POS Logic ---
     $(document).ready(function() {
       if(localStorage.getItem('pos_user')) $('#barcodeInput').focus();
     });
 
-    // --- Member Logic ---
     $('#memberInput').on('keyup', function(e) { if(e.key === 'Enter') findMember(); });
+    $('#barcodeInput').on('keyup', async function(e) {
+      if (e.key === 'Enter' && this.value.trim() !== "") {
+        const barcode = this.value.trim();
+        const res = await fetch(`${API_URL}?action=get_product&barcode=${barcode}`);
+        const result = await res.json();
+        if (result.found) { addToCart(result.data); this.value = ''; }
+        else { alert('ไม่พบสินค้า'); this.value = ''; }
+      }
+    });
 
     async function findMember() {
       const keyword = $('#memberInput').val().trim();
       if(!keyword) return;
-      try {
-        const res = await fetch(`${API_URL}?action=get_member&keyword=${keyword}`);
-        const result = await res.json();
-        if(result.found) {
-          currentMember = result.data;
-          $('#memberDisplayName').html(`<i class="fas fa-check-circle"></i> ${currentMember.name} <span class="text-sm font-normal text-gray-600">(${currentMember.points} แต้ม)</span>`).addClass('text-green-600');
-          $('#memberInput').val('');
-          $('#barcodeInput').focus();
-        } else {
-          alert('ไม่พบสมาชิก');
-          $('#memberInput').val('').focus();
-        }
-      } catch(e) { console.error(e); }
+      const res = await fetch(`${API_URL}?action=get_member&keyword=${keyword}`);
+      const result = await res.json();
+      if(result.found) {
+        currentMember = result.data;
+        $('#memberDisplayName').html(`<i class="fas fa-check-circle"></i> ${currentMember.name} <span class="text-sm font-normal text-gray-600">(${currentMember.points} แต้ม)</span>`).addClass('text-green-600');
+        $('#memberInput').val('');
+        $('#barcodeInput').focus();
+      } else { alert('ไม่พบสมาชิก'); $('#memberInput').val('').focus(); }
     }
 
     function resetMember() {
@@ -100,24 +98,6 @@
       $('#memberInput').val('');
       $('#barcodeInput').focus();
     }
-
-    // --- Barcode & Cart Logic ---
-    $('#barcodeInput').on('keyup', async function(e) {
-      if (e.key === 'Enter' && this.value.trim() !== "") {
-        const barcode = this.value.trim();
-        try {
-          const res = await fetch(`${API_URL}?action=get_product&barcode=${barcode}`);
-          const result = await res.json();
-          if (result.found) {
-            addToCart(result.data);
-            this.value = '';
-          } else {
-            alert('ไม่พบสินค้า');
-            this.value = '';
-          }
-        } catch(e) { console.error(e); }
-      }
-    });
 
     function addToCart(p) {
       const exist = cart.find(i => i.id === p.id);
@@ -135,14 +115,14 @@
         const sum = item.price * item.qty;
         total += sum; qty += item.qty;
         tbody.append(`
-        <tr class="hover:bg-blue-50 transition">
-            <td class="py-3 px-4">${item.name}</td>
-            <td class="py-3 px-4 text-right">${item.price.toFixed(2)}</td>
-            <td class="py-3 px-4 text-center"><span class="bg-gray-200 px-2 py-1 rounded text-sm font-bold">${item.qty}</span></td>
-            <td class="py-3 px-4 text-right font-bold text-blue-600">${sum.toFixed(2)}</td>
-            <td class="py-3 px-4 text-center"><button onclick="remove(${idx})" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button></td>
-        </tr>
-      `);
+                <tr class="hover:bg-blue-50 transition">
+                    <td class="py-3 px-4">${item.name}</td>
+                    <td class="py-3 px-4 text-right">${item.price.toFixed(2)}</td>
+                    <td class="py-3 px-4 text-center"><span class="bg-gray-200 px-2 py-1 rounded text-sm font-bold">${item.qty}</span></td>
+                    <td class="py-3 px-4 text-right font-bold text-blue-600">${sum.toFixed(2)}</td>
+                    <td class="py-3 px-4 text-center"><button onclick="remove(${idx})" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            `);
       });
       $('#grandTotal').text(total.toLocaleString('th-TH', {minimumFractionDigits: 2}));
       $('#totalItems').text(qty);
@@ -150,51 +130,28 @@
 
     function remove(idx) { cart.splice(idx, 1); renderCart(); $('#barcodeInput').focus(); }
 
-    // --- Submit Order (With Print) ---
     async function submitOrder() {
       if(cart.length === 0) return alert('ไม่มีสินค้า');
-
-      // 1. ถามยืนยัน
       if(!confirm('ยืนยันบันทึกยอดขาย?')) return;
 
       const payload = {
-        cashier: currentUserData ? currentUserData.fullname : 'Unknown',
+        cashier: currentUserData.fullname,
         total: parseFloat($('#grandTotal').text().replace(/,/g,'')),
         items: cart,
         member_id: currentMember ? currentMember.id : null
       };
 
       try {
-        const res = await fetch(`${API_URL}?action=save_order`, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
+        const res = await fetch(`${API_URL}?action=save_order`, { method: 'POST', body: JSON.stringify(payload) });
         const result = await res.json();
-
         if(result.success) {
-
-          // 2. ถามเพื่อ Print ใบเสร็จ
-          if(confirm(`✅ บันทึกสำเร็จ! (เลขที่ ${result.docId})\n\nต้องการพิมพ์ใบเสร็จหรือไม่?`)) {
-            // เปิดหน้าต่างใบเสร็จ
-            window.open(`receipt.php?doc_id=${result.docId}`, 'Receipt', 'width=350,height=600,scrollbars=yes');
-          }
-
-          // 3. เคลียร์ตะกร้า
-          cart = [];
-          resetMember();
-          renderCart();
-          $('#barcodeInput').focus();
-
-        } else {
-          alert('Error: ' + result.message);
-        }
-      } catch(e) {
-        console.error(e);
-        alert('Failed to save order');
-      }
+          alert(`✅ บันทึกสำเร็จ!\nเลขที่เอกสาร: ${result.docId}`);
+          cart = []; resetMember(); renderCart();
+        } else { alert('Error: ' + result.message); }
+      } catch(e) { alert('Failed'); }
     }
 
-    // --- Hotkeys ---
+    // Hotkeys
     $(document).keydown(function(e) {
       if(e.key === 'F2') { e.preventDefault(); $('#memberInput').focus(); }
       if(e.key === 'F4') { e.preventDefault(); $('#barcodeInput').focus(); }

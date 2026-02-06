@@ -12,6 +12,7 @@ $request_data = json_decode($json_input, true);
 try {
   switch ($action) {
 
+    // --- ส่วน LOGIN & MENU ---
     case 'login':
       $u = $request_data['username'] ?? '';
       $p = $request_data['password'] ?? '';
@@ -37,6 +38,7 @@ try {
       echo json_encode($stmt->fetchAll());
       break;
 
+    // --- ส่วนข้อมูลสินค้า & สมาชิก ---
     case 'get_product':
       $barcode = $_GET['barcode'];
       $stmt = $conn->prepare("SELECT * FROM products WHERE barcode = ?");
@@ -55,6 +57,7 @@ try {
       else echo json_encode(["found" => false]);
       break;
 
+    // --- ส่วนการขาย (Orders) ---
     case 'save_order':
       $cashier = $request_data['cashier'];
       $total = $request_data['total'];
@@ -107,6 +110,42 @@ try {
       echo json_encode($stmt->fetchAll());
       break;
 
+    // --- [เพิ่มใหม่] ส่วนพักบิล (Hold Bills) ---
+
+    // 1. บันทึกการพักบิล
+    case 'hold_bill':
+      $note = $request_data['note']; // หมายเหตุ เช่น ชื่อโต๊ะ
+      // แปลง array สินค้าเป็น JSON string เพื่อเก็บใน DB
+      $items = json_encode($request_data['items'], JSON_UNESCAPED_UNICODE);
+      $total = $request_data['total'];
+
+      $stmt = $conn->prepare("INSERT INTO held_bills (reference_note, items, total_amount) VALUES (?, ?, ?)");
+      if($stmt->execute([$note, $items, $total])) {
+        echo json_encode(["success" => true, "message" => "พักบิลเรียบร้อย"]);
+      } else {
+        echo json_encode(["success" => false, "message" => "เกิดข้อผิดพลาดในการพักบิล"]);
+      }
+      break;
+
+    // 2. ดึงรายการบิลที่พักไว้ทั้งหมด
+    case 'get_held_bills':
+      $stmt = $conn->prepare("SELECT * FROM held_bills ORDER BY id DESC");
+      $stmt->execute();
+      echo json_encode($stmt->fetchAll());
+      break;
+
+    // 3. ลบบิลที่พักไว้ (เมื่อเรียกคืนมาทำรายการ หรือกดยกเลิก)
+    case 'delete_held_bill':
+      $id = $request_data['id'];
+      $stmt = $conn->prepare("DELETE FROM held_bills WHERE id = ?");
+      if($stmt->execute([$id])) {
+        echo json_encode(["success" => true]);
+      } else {
+        echo json_encode(["success" => false, "message" => "ลบไม่สำเร็จ"]);
+      }
+      break;
+
     default: echo json_encode(["message" => "Invalid Action"]);
   }
 } catch (PDOException $e) { echo json_encode(["success" => false, "message" => "DB Error: " . $e->getMessage()]); }
+?>

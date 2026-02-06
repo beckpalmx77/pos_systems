@@ -11,11 +11,28 @@
  Target Server Version : 90100 (9.1.0)
  File Encoding         : 65001
 
- Date: 06/02/2026 15:45:56
+ Date: 06/02/2026 16:19:26
 */
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- Table structure for held_bills
+-- ----------------------------
+DROP TABLE IF EXISTS `held_bills`;
+CREATE TABLE `held_bills`  (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `reference_note` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'ชื่ออ้างอิง เช่น โต๊ะ 1',
+  `items` json NOT NULL COMMENT 'เก็บข้อมูลสินค้าในตะกร้าเป็น JSON',
+  `total_amount` decimal(10, 2) NULL DEFAULT NULL,
+  `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of held_bills
+-- ----------------------------
 
 -- ----------------------------
 -- Table structure for members
