@@ -1,10 +1,22 @@
 </div> <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
 
 <script>
+  // --- Config Alertify ---
+  if(typeof alertify !== 'undefined') {
+    alertify.defaults.transition = "zoom";
+    alertify.defaults.theme.ok = "ui positive button";
+    alertify.defaults.theme.cancel = "ui black button";
+    // ตั้งค่าภาษาไทย
+    alertify.defaults.glossary.title = 'แจ้งเตือน';
+    alertify.defaults.glossary.ok = 'ตกลง';
+    alertify.defaults.glossary.cancel = 'ยกเลิก';
+  }
+
   // กำหนด URL API
   const USER_API = 'api/user_api.php';
-  const POS_API  = 'api/basic_api.php'; // เผื่อไว้ใช้
+  const POS_API  = 'api/basic_api.php';
 
   let currentUserData = null;
 
@@ -27,21 +39,17 @@
       'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
     ];
 
-    // ดึงค่าต่างๆ
     const dayName = days[now.getDay()];
     const date = now.getDate();
     const monthName = months[now.getMonth()];
-    const year = now.getFullYear() + 543; // แปลงเป็น พ.ศ.
+    const year = now.getFullYear() + 543;
 
-    // จัดรูปแบบเวลา hh:mm:ss
     const h = String(now.getHours()).padStart(2, '0');
     const m = String(now.getMinutes()).padStart(2, '0');
     const s = String(now.getSeconds()).padStart(2, '0');
 
-    // ประกอบข้อความ: "วันศุกร์ , 6 กุมภาพันธ์ 2569 เวลา 15:00:00"
     const finalString = `${dayName} , ${date} ${monthName} ${year} เวลา ${h}:${m}:${s}`;
 
-    // แสดงผล (เช็คว่ามี element นี้อยู่ไหม เพื่อป้องกัน error ในหน้า Login)
     const timeDisplay = document.getElementById('systemTime');
     if(timeDisplay) {
       timeDisplay.innerText = finalString;
@@ -56,7 +64,6 @@
       $('#loginModal').addClass('hidden');
       $('#appWrapper').removeClass('hidden');
 
-      // อัปเดตชื่อผู้ใช้บน Topbar
       const userDisplay = document.getElementById('currentUser');
       if(userDisplay) userDisplay.innerText = currentUserData.fullname;
 
@@ -78,16 +85,28 @@
       const data = await res.json();
       if (data.success) {
         localStorage.setItem('pos_user', JSON.stringify(data.user));
+        alertify.success('เข้าสู่ระบบสำเร็จ'); // แจ้งเตือนมุมขวาล่าง
         checkLoginState();
-      } else { alert(data.message); }
-    } catch (e) { alert('Connection Error'); }
+      } else {
+        alertify.alert('เข้าสู่ระบบไม่สำเร็จ', data.message);
+      }
+    } catch (e) {
+      alertify.error('Connection Error');
+    }
   }
 
+  // [แก้ไข] ใช้ Alertify Confirm แทน confirm ธรรมดา
   function logout() {
-    if(confirm('ยืนยันออกจากระบบ?')) {
-      localStorage.removeItem('pos_user');
-      window.location.href = 'index.php';
-    }
+    alertify.confirm('ออกจากระบบ', 'ยืนยันที่จะออกจากระบบหรือไม่?',
+      function() {
+        // เมื่อกด "ตกลง"
+        localStorage.removeItem('pos_user');
+        window.location.href = 'index.php';
+      },
+      function() {
+        // เมื่อกด "ยกเลิก" (ไม่ต้องทำอะไร)
+      }
+    ).set('labels', {ok:'ออกจากระบบ', cancel:'ยกเลิก'});
   }
 
   async function loadMenus(role) {
@@ -98,26 +117,25 @@
 
       if(list) {
         list.innerHTML = '';
-        // หาชื่อไฟล์ปัจจุบัน (เช่น index.php)
         const currentPage = window.location.pathname.split("/").pop();
 
         menus.forEach(m => {
-          // Highlight เมนูที่กำลังใช้งานอยู่
           const isActive = (m.link === currentPage)
             ? 'bg-slate-800 text-white border-l-4 border-blue-400'
             : 'text-gray-400 hover:bg-slate-800 hover:text-white';
 
           list.innerHTML += `
-                    <li>
-                        <a href="${m.link}" class="flex items-center px-4 py-3 transition ${isActive}">
-                            <span class="w-8 text-center"><i class="fas ${m.icon}"></i></span>
-                            <span>${m.name}</span>
-                        </a>
-                    </li>`;
+            <li>
+                <a href="${m.link}" class="flex items-center px-4 py-3 transition ${isActive}">
+                    <span class="w-8 text-center"><i class="fas ${m.icon}"></i></span>
+                    <span>${m.name}</span>
+                </a>
+            </li>`;
         });
       }
     } catch(e) { console.error("Menu Load Error:", e); }
   }
 </script>
+
 </body>
 </html>

@@ -62,7 +62,6 @@
   </main>
 
   <script>
-    // กำหนด API URL ให้ชัดเจน (เผื่อไม่ได้ประกาศใน footer)
     const API_URL = 'api/basic_api.php';
 
     let cart = [];
@@ -71,6 +70,13 @@
     // --- Startup ---
     $(document).ready(function() {
       if(localStorage.getItem('pos_user')) $('#barcodeInput').focus();
+
+      // ตั้งค่าปุ่ม Alertify ภาษาไทย
+      if(typeof alertify !== 'undefined') {
+        alertify.defaults.glossary.title = 'แจ้งเตือน';
+        alertify.defaults.glossary.ok = 'ตกลง';
+        alertify.defaults.glossary.cancel = 'ยกเลิก';
+      }
     });
 
     // --- Member Logic ---
@@ -87,8 +93,9 @@
           $('#memberDisplayName').html(`<i class="fas fa-check-circle"></i> ${currentMember.name} <span class="text-sm font-normal text-gray-600">(${currentMember.points} แต้ม)</span>`).addClass('text-green-600');
           $('#memberInput').val('');
           $('#barcodeInput').focus();
+          alertify.success(`สมาชิก: ${currentMember.name}`); // ใช้ Alertify Success
         } else {
-          alert('ไม่พบสมาชิก');
+          alertify.error('ไม่พบข้อมูลสมาชิก'); // ใช้ Alertify Error
           $('#memberInput').val('').focus();
         }
       } catch(e) { console.error(e); }
@@ -112,7 +119,7 @@
             addToCart(result.data);
             this.value = '';
           } else {
-            alert('ไม่พบสินค้า');
+            alertify.warning('ไม่พบสินค้า!'); // ใช้ Alertify Warning
             this.value = '';
           }
         } catch(e) { console.error(e); }
@@ -150,13 +157,25 @@
 
     function remove(idx) { cart.splice(idx, 1); renderCart(); $('#barcodeInput').focus(); }
 
-    // --- Submit Order (With Print) ---
-    async function submitOrder() {
-      if(cart.length === 0) return alert('ไม่มีสินค้า');
+    // --- Submit Order (Alertify Confirm) ---
+    function submitOrder() {
+      if(cart.length === 0) return alertify.alert('แจ้งเตือน', 'ไม่มีสินค้าในตะกร้า');
 
-      // 1. ถามยืนยัน
-      if(!confirm('ยืนยันบันทึกยอดขาย?')) return;
+      // [แก้ไข] ใช้ alertify.confirm แทน confirm() ธรรมดา
+      alertify.confirm('ยืนยันการขาย', 'ต้องการบันทึกยอดขายหรือไม่?',
+        async function(){
+          // --- เมื่อกด OK (ตกลง) ---
+          await processOrder();
+        },
+        function(){
+          // --- เมื่อกด Cancel (ยกเลิก) ---
+          // alertify.error('ยกเลิกรายการ');
+        }
+      );
+    }
 
+    // แยกฟังก์ชันออกมาเพื่อให้เรียกใช้ใน Callback ง่ายขึ้น
+    async function processOrder() {
       const payload = {
         cashier: currentUserData ? currentUserData.fullname : 'Unknown',
         total: parseFloat($('#grandTotal').text().replace(/,/g,'')),
@@ -172,26 +191,34 @@
         const result = await res.json();
 
         if(result.success) {
-
-          // 2. ถามเพื่อ Print ใบเสร็จ
-          if(confirm(`✅ บันทึกสำเร็จ! (เลขที่ ${result.docId})\n\nต้องการพิมพ์ใบเสร็จหรือไม่?`)) {
-            // เปิดหน้าต่างใบเสร็จ
-            window.open(`receipt.php?doc_id=${result.docId}`, 'Receipt', 'width=350,height=600,scrollbars=yes');
-          }
-
-          // 3. เคลียร์ตะกร้า
-          cart = [];
-          resetMember();
-          renderCart();
-          $('#barcodeInput').focus();
+          // ถามเพื่อ Print ใบเสร็จ (Alertify Confirm อีกรอบ)
+          alertify.confirm('บันทึกสำเร็จ', `เลขที่เอกสาร: <b>${result.docId}</b><br>ต้องการพิมพ์ใบเสร็จหรือไม่?`,
+            function() {
+              // กดตกลง -> พิมพ์
+              window.open(`receipt.php?doc_id=${result.docId}`, 'Receipt', 'width=350,height=600,scrollbars=yes');
+              clearScreen();
+            },
+            function() {
+              // กดไม่พิมพ์ -> แค่เคลียร์หน้าจอ
+              clearScreen();
+            }
+          ).set('labels', {ok:'พิมพ์ใบเสร็จ', cancel:'ไม่พิมพ์'}); // เปลี่ยนชื่อปุ่มเฉพาะตรงนี้
 
         } else {
-          alert('Error: ' + result.message);
+          alertify.alert('ข้อผิดพลาด', result.message);
         }
       } catch(e) {
         console.error(e);
-        alert('Failed to save order');
+        alertify.error('Failed to save order');
       }
+    }
+
+    function clearScreen() {
+      cart = [];
+      resetMember();
+      renderCart();
+      $('#barcodeInput').focus();
+      alertify.success('พร้อมขายรายการต่อไป');
     }
 
     // --- Hotkeys ---
