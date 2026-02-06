@@ -2,10 +2,11 @@
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 
 <script>
-  const API_URL = 'api/basic_api.php';
+  // [สำคัญ] แยก API URL ให้ชัดเจน
+  const USER_API = 'api/user_api.php';
+
   let currentUserData = null;
 
-  // --- GLOBAL STARTUP ---
   $(document).ready(function() {
     checkLoginState();
     setInterval(() => $('#systemTime').text(new Date().toLocaleString('th-TH')), 1000);
@@ -29,7 +30,8 @@
     const u = $('#l_username').val();
     const p = $('#l_password').val();
     try {
-      const res = await fetch(`${API_URL}?action=login`, { method: 'POST', body: JSON.stringify({ username: u, password: p }) });
+      // เรียกใช้ USER_API
+      const res = await fetch(`${USER_API}?action=login`, { method: 'POST', body: JSON.stringify({ username: u, password: p }) });
       const data = await res.json();
       if (data.success) {
         localStorage.setItem('pos_user', JSON.stringify(data.user));
@@ -46,7 +48,8 @@
   }
 
   async function loadMenus(role) {
-    const res = await fetch(`${API_URL}?action=get_menus&role=${role}`);
+    // เรียกใช้ USER_API
+    const res = await fetch(`${USER_API}?action=get_menus&role=${role}`);
     const menus = await res.json();
     const list = document.getElementById('menuList');
     if(list) {
