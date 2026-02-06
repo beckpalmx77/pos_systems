@@ -66,9 +66,9 @@ try {
 
       $conn->beginTransaction();
       try {
-        // Generate Running No: ORDYYYYMM-XXXXX
+        // Generate Running No: ORD-YYYYMM-XXXXX
         $ym = date("Ym");
-        $prefix = "ORD" . $ym . "-";
+        $prefix = "ORD-" . $ym . "-";
 
         $stmt = $conn->prepare("SELECT doc_id FROM orders WHERE doc_id LIKE ? ORDER BY doc_id DESC LIMIT 1");
         $stmt->execute([$prefix . '%']);
@@ -97,11 +97,39 @@ try {
       break;
 
     case 'get_orders':
+      $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
+      $end_date   = isset($_GET['end_date']) ? $_GET['end_date'] : '';
+
+      if (!empty($start_date) && !empty($end_date)) {
+        // กรณีมีการเลือกวันที่: ค้นหาตามช่วงเวลา (ใช้ DATE() เพื่อตัดเวลาออก เปรียบเทียบแค่วันที่)
+        $sql = "SELECT o.*, m.name as member_name
+                  FROM orders o
+                  LEFT JOIN members m ON o.member_id = m.id
+                  WHERE DATE(o.order_date) BETWEEN ? AND ?
+                  ORDER BY o.id DESC";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$start_date, $end_date]);
+      } else {
+        // กรณีไม่เลือกวันที่: ดึง 100 รายการล่าสุด
+        $sql = "SELECT o.*, m.name as member_name
+                  FROM orders o
+                  LEFT JOIN members m ON o.member_id = m.id
+                  ORDER BY o.id DESC LIMIT 100";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute();
+      }
+
+      echo json_encode($stmt->fetchAll());
+      break;
+
+/*
+    case 'get_orders':
       $sql = "SELECT o.*, m.name as member_name FROM orders o LEFT JOIN members m ON o.member_id = m.id ORDER BY o.id DESC LIMIT 100";
       $stmt = $conn->prepare($sql);
       $stmt->execute();
       echo json_encode($stmt->fetchAll());
       break;
+*/
 
     case 'get_order_detail':
       $doc_id = $_GET['doc_id'] ?? '';

@@ -1,8 +1,6 @@
 <?php include 'layouts/header.php'; ?>
 <?php include 'layouts/sidebar.php'; ?>
 
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-
 <main class="flex-1 flex flex-col min-w-0 bg-gray-100">
   <?php include 'layouts/topbar.php'; ?>
 
@@ -49,11 +47,6 @@
           <input type="text" id="inpBarcode" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="สแกนหรือพิมพ์รหัส">
         </div>
 
-        <div class="flex justify-center bg-gray-50 border border-gray-200 rounded p-2 h-20 items-center overflow-hidden">
-          <svg id="barcodePreview" class="hidden"></svg>
-          <span id="barcodePlaceholder" class="text-gray-400 text-xs">ภาพบาร์โค้ดจะปรากฏที่นี่</span>
-        </div>
-
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อสินค้า</label>
           <input type="text" id="inpName" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ระบุชื่อสินค้า">
@@ -78,6 +71,7 @@
 
 <script>
   let table;
+  // ชี้ไปที่ API ตัวใหม่
   const API_URL = 'api/products_api.php';
 
   $(document).ready(function() {
@@ -91,11 +85,7 @@
       "columns": [
         {
           "data": "barcode",
-          "className": "font-mono font-bold text-blue-600",
-          "render": function(data) {
-            // แสดงไอคอนเล็กๆ หน้าบาร์โค้ดในตาราง
-            return `<i class="fas fa-barcode text-gray-400 mr-1"></i> ${data}`;
-          }
+          "className": "font-mono font-bold text-blue-600"
         },
         { "data": "name" },
         {
@@ -107,22 +97,21 @@
           "data": null,
           "className": "text-center",
           "render": function(data, type, row) {
-            // ต้อง escape ข้อมูลเพื่อความปลอดภัยเวลาส่งเข้าฟังก์ชัน
             return `
-                <button class="btn-edit text-yellow-500 hover:text-yellow-600 mx-1 p-1" title="แก้ไข">
-                    <i class="fas fa-edit fa-lg"></i>
-                </button>
-                <button class="btn-delete text-red-500 hover:text-red-600 mx-1 p-1" title="ลบ">
-                    <i class="fas fa-trash fa-lg"></i>
-                </button>
-             `;
+                            <button class="btn-edit text-yellow-500 hover:text-yellow-600 mx-1 p-1" title="แก้ไข">
+                                <i class="fas fa-edit fa-lg"></i>
+                            </button>
+                            <button class="btn-delete text-red-500 hover:text-red-600 mx-1 p-1" title="ลบ">
+                                <i class="fas fa-trash fa-lg"></i>
+                            </button>
+                        `;
           }
         }
       ],
       "order": [[ 0, "desc" ]]
     });
 
-    // 2. Event: กดปุ่มแก้ไข (Load สินค้า)
+    // 2. Event: กดปุ่มแก้ไข
     $('#productsTable tbody').on('click', '.btn-edit', function () {
       let tr = $(this).closest('tr');
       let row = table.row(tr);
@@ -134,10 +123,6 @@
       $('#inpBarcode').val(data.barcode);
       $('#inpName').val(data.name);
       $('#inpPrice').val(data.price);
-
-      // [3] Gen Barcode ทันทีที่โหลดข้อมูลมา
-      genBar(data.barcode);
-
       $('#productModal').removeClass('hidden');
     });
 
@@ -161,54 +146,18 @@
     $('#productModal').on('click', function(e) {
       if (e.target === this) $('#productModal').addClass('hidden');
     });
-
-    // [4] Event: เมื่อพิมพ์รหัสบาร์โค้ด (Keyup/Input)
-    $('#inpBarcode').on('input', function() {
-      let code = $(this).val();
-      genBar(code);
-    });
   });
-
-  // [5] ฟังก์ชัน Gen Barcode
-  function genBar(code) {
-    if(code && code.trim() !== "") {
-      $('#barcodePlaceholder').addClass('hidden');
-      $('#barcodePreview').removeClass('hidden');
-      try {
-        JsBarcode("#barcodePreview", code, {
-          format: "CODE128",
-          lineColor: "#000",
-          width: 2,
-          height: 40,
-          displayValue: true,
-          fontSize: 14,
-          margin: 0
-        });
-      } catch(e) {
-        // กรณีพิมพ์ภาษาไทย หรือรหัสผิด format
-        $('#barcodePreview').addClass('hidden');
-        $('#barcodePlaceholder').removeClass('hidden').text('รหัสไม่ถูกต้อง');
-      }
-    } else {
-      // ถ้าช่องว่าง
-      $('#barcodePreview').addClass('hidden');
-      $('#barcodePlaceholder').removeClass('hidden').text('ภาพบาร์โค้ดจะปรากฏที่นี่');
-    }
-  }
 
   // ฟังก์ชันเปิด Modal เพิ่มใหม่
   function openModal() {
     $('#modalTitle').text('เพิ่มสินค้าใหม่');
-    $('#prodId').val('');
-    $('#inpBarcode').val('');
+    $('#prodId').val('');     // เคลียร์ ID
+    $('#inpBarcode').val(''); // เคลียร์ช่องกรอก
     $('#inpName').val('');
     $('#inpPrice').val('');
-
-    // เคลียร์ภาพบาร์โค้ด
-    $('#barcodePreview').addClass('hidden');
-    $('#barcodePlaceholder').removeClass('hidden').text('ภาพบาร์โค้ดจะปรากฏที่นี่');
-
     $('#productModal').removeClass('hidden');
+
+    // Auto Focus ช่องบาร์โค้ด
     setTimeout(() => $('#inpBarcode').focus(), 100);
   }
 
@@ -235,7 +184,7 @@
       if(result.success) {
         alert('✅ ' + result.message);
         $('#productModal').addClass('hidden');
-        table.ajax.reload();
+        table.ajax.reload(); // รีโหลดตาราง
       } else {
         alert('❌ Error: ' + result.message);
       }
