@@ -1,6 +1,6 @@
 <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20">
   <div class="h-20 flex items-center justify-center border-b border-slate-700 bg-slate-900">
-    <h1 class="text-2xl font-bold tracking-widest text-blue-400">POS<span class="text-white">PRO</span></h1>
+    <h1 class="text-2xl font-bold tracking-widest text-blue-400">POS<span class="text-white"> SYSTEMS</span></h1>
   </div>
   <ul id="menuList" class="flex-1 overflow-y-auto py-4 px-2 space-y-1"></ul>
   <div class="p-4 border-t border-slate-700">

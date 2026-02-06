@@ -11,7 +11,7 @@
  Target Server Version : 90100 (9.1.0)
  File Encoding         : 65001
 
- Date: 06/02/2026 15:33:19
+ Date: 06/02/2026 15:45:56
 */
 
 SET NAMES utf8mb4;
@@ -48,7 +48,7 @@ CREATE TABLE `menus`  (
   `icon` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `allowed_roles` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = MyISAM AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of menus
@@ -58,6 +58,7 @@ INSERT INTO `menus` VALUES (2, 'สต็อกสินค้า', 'products.ph
 INSERT INTO `menus` VALUES (3, 'รายงานยอดขาย', 'history.php', 'fa-chart-line', 'admin,staff');
 INSERT INTO `menus` VALUES (4, 'ผู้ใช้งานระบบ', 'users.php', 'fa-users-cog', 'admin');
 INSERT INTO `menus` VALUES (5, 'กำหนดสิทธิ์', 'permissions.php', 'fa-user-lock', 'admin');
+INSERT INTO `menus` VALUES (6, 'จัดการเมนู', 'menus_manage.php', 'fa-list', 'admin');
 
 -- ----------------------------
 -- Table structure for order_items
