@@ -176,4 +176,4 @@ try {
     default: echo json_encode(["message" => "Invalid Action"]);
   }
 } catch (PDOException $e) { echo json_encode(["success" => false, "message" => "DB Error: " . $e->getMessage()]); }
-?>
+
