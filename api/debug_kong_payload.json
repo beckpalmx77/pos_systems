@@ -1,0 +1,16 @@
+{
+    "ref_no": "ORD-202602-00003",
+    "timestamp": "2026-02-07T11:40:08+07:00",
+    "amount": 22.5,
+    "cashier": "Admin Manager",
+    "items": [
+        {
+            "id": 2,
+            "barcode": "8850456",
+            "name": "ขนมปัง",
+            "price": 22.5,
+            "qty": 1
+        }
+    ],
+    "member_id": null
+}

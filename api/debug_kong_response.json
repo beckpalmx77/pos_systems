@@ -1,0 +1,5 @@
+{
+    "status": "error",
+    "message": "Could not resolve host: api.your-company.com",
+    "http_code": 0
+}
