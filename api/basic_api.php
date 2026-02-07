@@ -12,7 +12,7 @@ $request_data = json_decode($json_input, true);
 try {
   switch ($action) {
 
-    // --- ส่วน LOGIN & MENU ---
+    // --- 1. LOGIN & MENU ---
     case 'login':
       $u = $request_data['username'] ?? '';
       $p = $request_data['password'] ?? '';
@@ -38,7 +38,7 @@ try {
       echo json_encode($stmt->fetchAll());
       break;
 
-    // --- ส่วนข้อมูลสินค้า & สมาชิก ---
+    // --- 2. PRODUCT & MEMBER ---
     case 'get_product':
       $barcode = $_GET['barcode'];
       $stmt = $conn->prepare("SELECT * FROM products WHERE barcode = ?");
@@ -57,7 +57,7 @@ try {
       else echo json_encode(["found" => false]);
       break;
 
-    // --- ส่วนการขาย (Orders) ---
+    // --- 3. SAVE ORDER (CORE LOGIC) ---
     case 'save_order':
       $cashier = $request_data['cashier'];
       $total = $request_data['total'];
@@ -66,11 +66,9 @@ try {
 
       $conn->beginTransaction();
       try {
-        // ================================================================
-        // 1. สร้างเลขที่เอกสาร (Running No)
-        // รูปแบบ: ORD-YYYYMM-XXXXX (เช่น ORD-202602-00001)
-        //Logic นี้จะรีเซ็ตเลขใหม่เป็น 1 ทุกครั้งที่ขึ้นเดือนใหม่
-        // ================================================================
+        // -----------------------------------------------------------
+        // 3.1 สร้างเลขที่เอกสาร (Running No: ORD-YYYYMM-XXXXX)
+        // -----------------------------------------------------------
         $ym = date("Ym");
         $prefix = "ORD-" . $ym . "-";
 
@@ -78,67 +76,83 @@ try {
         $stmt->execute([$prefix . '%']);
         $lastOrder = $stmt->fetch();
 
+        // ถ้าขึ้นเดือนใหม่ เริ่มนับ 1 ใหม่
         $nextNo = $lastOrder ? intval(substr($lastOrder['doc_id'], -5)) + 1 : 1;
         $newDocId = $prefix . str_pad($nextNo, 5, '0', STR_PAD_LEFT);
 
+        // -----------------------------------------------------------
+        // 3.2 บันทึกข้อมูลลง Database
+        // -----------------------------------------------------------
         // Insert Order
         $stmt = $conn->prepare("INSERT INTO orders (doc_id, total_amount, cashier_name, member_id) VALUES (?, ?, ?, ?)");
         $stmt->execute([$newDocId, $total, $cashier, $member_id]);
         $order_id = $conn->lastInsertId();
 
-        // ------------------------------------------------------------
-        // [แก้ไข] Insert Items (เพิ่ม field barcode)
-        // ------------------------------------------------------------
+        // Insert Items & เตรียม Data สำหรับ API
         $stmt_item = $conn->prepare("INSERT INTO order_items (order_id, doc_id, product_name, price, qty, barcode) VALUES (?, ?, ?, ?, ?, ?)");
 
+        $api_items = []; // ตัวแปรสำหรับส่ง API
+
         foreach ($items as $item) {
-          // ตรวจสอบว่ามี barcode ส่งมาไหม ถ้าไม่มีให้เป็นค่าว่าง
-          $item_barcode = isset($item['barcode']) ? $item['barcode'] : '';
+          // เตรียมค่าต่างๆ
+          $p_id    = isset($item['id']) ? intval($item['id']) : 0;
+          $barcode = isset($item['barcode']) ? $item['barcode'] : '';
+          $name    = $item['name'];
+          $price   = floatval($item['price']);
+          $qty     = intval($item['qty']);
+          $line_total = $price * $qty;
 
-          $stmt_item->execute([
-            $order_id,
-            $newDocId,
-            $item['name'],
-            $item['price'],
-            $item['qty'],
-            $item_barcode // เพิ่มค่า barcode ตรงนี้
-          ]);
+          // Save ลง DB (บันทึก Barcode ด้วย)
+          $stmt_item->execute([$order_id, $newDocId, $name, $price, $qty, $barcode]);
+
+          // จัด Format สำหรับส่ง API (Data Dictionary)
+          $api_items[] = [
+            "product_id" => $p_id,
+            "barcode"    => $barcode,
+            "name"       => $name,
+            "price"      => $price,
+            "qty"        => $qty,
+            "line_total" => $line_total
+          ];
         }
-        // ------------------------------------------------------------
 
-        $conn->commit();
+        $conn->commit(); // บันทึกสำเร็จ
 
-        // ============================================================
-        // [ยิง API] ส่งข้อมูลไปยัง KONG หรือ Gateway ภายนอก
-        // ============================================================
+        // -----------------------------------------------------------
+        // 3.3 ส่งข้อมูลไปยัง KONG API GATEWAY
+        // -----------------------------------------------------------
 
-        $kong_url = "https://api.your-company.com/v1/orders";
-        // $kong_url = "http://localhost/pos_pro/api/backend_service.php"; // Test Local
+        // Target URL (IP 192.168.88.241 Port 8000)
+        $kong_url = "http://192.168.88.241:8000/v1/orders";
 
+        // Headers (Key Auth) -> แก้ไข Key ตรงนี้ครับ
         $headers = [
           "Content-Type: application/json",
-          "apikey: YOUR_SECRET_KONG_KEY",
+          "apikey: pos991456", // <--- KEY ที่คุณระบุมา
           "Shop-ID: BRANCH_001"
         ];
 
+        // Payload (Standardized)
         $payload = [
-          "ref_no"    => $newDocId,
-          "timestamp" => date("c"),
-          "amount"    => $total,
-          "cashier"   => $cashier,
-          "items"     => $items,
-          "member_id" => $member_id
+          "transaction_id" => $newDocId,
+          "timestamp"      => date("c"),
+          "shop_id"        => "BRANCH_001",
+          "cashier"        => $cashier,
+          "member_id"      => $member_id,
+          "total_amount"   => floatval($total),
+          "items"          => $api_items
         ];
 
-        // [DEBUG LOG]
+        // [DEBUG] บันทึก Payload ลงไฟล์
         file_put_contents('debug_kong_payload.json', json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-        // เรียกฟังก์ชันส่งข้อมูล
+        // ส่ง Request
         $gatewayResponse = sendToKong($kong_url, $payload, $headers);
 
-        // [DEBUG LOG]
+        // [DEBUG] บันทึก Response ลงไฟล์
         file_put_contents('debug_kong_response.json', json_encode($gatewayResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
+        // ส่งผลลัพธ์กลับหน้าบ้าน
         echo json_encode([
           "success" => true,
           "orderId" => $order_id,
@@ -152,23 +166,24 @@ try {
       }
       break;
 
+    // --- 4. HISTORY & REPORTS ---
     case 'get_orders':
       $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
       $end_date   = isset($_GET['end_date']) ? $_GET['end_date'] : '';
 
       if (!empty($start_date) && !empty($end_date)) {
         $sql = "SELECT o.*, m.name as member_name
-                  FROM orders o
-                  LEFT JOIN members m ON o.member_id = m.id
-                  WHERE DATE(o.order_date) BETWEEN ? AND ?
-                  ORDER BY o.id DESC";
+                FROM orders o
+                LEFT JOIN members m ON o.member_id = m.id
+                WHERE DATE(o.order_date) BETWEEN ? AND ?
+                ORDER BY o.id DESC";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$start_date, $end_date]);
       } else {
         $sql = "SELECT o.*, m.name as member_name
-                  FROM orders o
-                  LEFT JOIN members m ON o.member_id = m.id
-                  ORDER BY o.id DESC LIMIT 100";
+                FROM orders o
+                LEFT JOIN members m ON o.member_id = m.id
+                ORDER BY o.id DESC LIMIT 100";
         $stmt = $conn->prepare($sql);
         $stmt->execute();
       }
@@ -182,7 +197,7 @@ try {
       echo json_encode($stmt->fetchAll());
       break;
 
-    // --- ส่วนพักบิล ---
+    // --- 5. HOLD BILLS (พักบิล) ---
     case 'hold_bill':
       $note = $request_data['note'];
       $items = json_encode($request_data['items'], JSON_UNESCAPED_UNICODE);
@@ -192,7 +207,7 @@ try {
       if($stmt->execute([$note, $items, $total])) {
         echo json_encode(["success" => true, "message" => "พักบิลเรียบร้อย"]);
       } else {
-        echo json_encode(["success" => false, "message" => "เกิดข้อผิดพลาดในการพักบิล"]);
+        echo json_encode(["success" => false, "message" => "Error"]);
       }
       break;
 
@@ -205,11 +220,8 @@ try {
     case 'delete_held_bill':
       $id = $request_data['id'];
       $stmt = $conn->prepare("DELETE FROM held_bills WHERE id = ?");
-      if($stmt->execute([$id])) {
-        echo json_encode(["success" => true]);
-      } else {
-        echo json_encode(["success" => false, "message" => "ลบไม่สำเร็จ"]);
-      }
+      if($stmt->execute([$id])) echo json_encode(["success" => true]);
+      else echo json_encode(["success" => false]);
       break;
 
     default: echo json_encode(["message" => "Invalid Action"]);
@@ -217,7 +229,7 @@ try {
 } catch (PDOException $e) { echo json_encode(["success" => false, "message" => "DB Error: " . $e->getMessage()]); }
 
 // ============================================================
-// ฟังก์ชันเสริม: ส่ง Request ไปยัง External API (Kong)
+// HELPER FUNCTION: cURL to Kong
 // ============================================================
 function sendToKong($url, $data, $headers = []) {
   $ch = curl_init($url);
@@ -231,6 +243,8 @@ function sendToKong($url, $data, $headers = []) {
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
   curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
   curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+  // Disable SSL Verify (สำหรับ IP ภายใน)
   curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
   curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 
@@ -239,7 +253,9 @@ function sendToKong($url, $data, $headers = []) {
   $err = curl_error($ch);
   curl_close($ch);
 
-  if ($err) { return ["status" => "error", "message" => $err, "http_code" => $httpCode]; }
+  if ($err) {
+    return ["status" => "error", "message" => $err, "http_code" => $httpCode];
+  }
 
   return json_decode($result, true) ?: ["raw_response" => $result, "http_code" => $httpCode];
 }

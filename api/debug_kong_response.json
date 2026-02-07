@@ -1,5 +1,4 @@
 {
-    "status": "error",
-    "message": "Could not resolve host: api.your-company.com",
-    "http_code": 0
+    "message": "An invalid response was received from the upstream server",
+    "request_id": "0c5cde225d8ad262bacf6026cd730568"
 }
