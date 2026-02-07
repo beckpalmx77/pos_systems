@@ -12,9 +12,10 @@ $request_data = json_decode($json_input, true);
 try {
   switch ($action) {
 
-    // 1. ดึงข้อมูลเมนูทั้งหมด
+    // 1. ดึงข้อมูลเมนูทั้งหมด (เรียงตาม menu_id)
     case 'get_menus_list':
-      $stmt = $conn->prepare("SELECT * FROM menus ORDER BY id ASC");
+      // เปลี่ยน ORDER BY เป็น menu_id
+      $stmt = $conn->prepare("SELECT * FROM menus ORDER BY menu_id ASC");
       $stmt->execute();
       echo json_encode($stmt->fetchAll());
       break;
@@ -22,10 +23,13 @@ try {
     // 2. บันทึกเมนู (เพิ่มใหม่ / แก้ไข)
     case 'save_menu':
       $id = $request_data['id'] ?? '';
+
+      // รับค่า menu_id (ถ้าไม่มีให้เป็น 0)
+      $menu_id = isset($request_data['menu_id']) ? intval($request_data['menu_id']) : 0;
+
       $name = trim($request_data['name']);
       $link = trim($request_data['link']);
       $icon = trim($request_data['icon']);
-      // รับค่า allowed_roles มาเป็น Array แล้วแปลงเป็น String (เช่น "admin,staff")
       $roles_array = $request_data['allowed_roles'] ?? [];
       $allowed_roles = implode(',', $roles_array);
 
@@ -36,16 +40,18 @@ try {
 
       if (empty($id)) {
         // --- เพิ่มใหม่ (INSERT) ---
-        $sql = "INSERT INTO menus (name, link, icon, allowed_roles) VALUES (?, ?, ?, ?)";
+        // เพิ่ม menu_id ลงใน query
+        $sql = "INSERT INTO menus (menu_id, name, link, icon, allowed_roles) VALUES (?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        if($stmt->execute([$name, $link, $icon, $allowed_roles])) {
+        if($stmt->execute([$menu_id, $name, $link, $icon, $allowed_roles])) {
           echo json_encode(["success" => true, "message" => "เพิ่มเมนูสำเร็จ"]);
         }
       } else {
         // --- แก้ไข (UPDATE) ---
-        $sql = "UPDATE menus SET name=?, link=?, icon=?, allowed_roles=? WHERE id=?";
+        // เพิ่ม menu_id=? ลงใน query
+        $sql = "UPDATE menus SET menu_id=?, name=?, link=?, icon=?, allowed_roles=? WHERE id=?";
         $stmt = $conn->prepare($sql);
-        if($stmt->execute([$name, $link, $icon, $allowed_roles, $id])) {
+        if($stmt->execute([$menu_id, $name, $link, $icon, $allowed_roles, $id])) {
           echo json_encode(["success" => true, "message" => "แก้ไขเมนูสำเร็จ"]);
         }
       }
@@ -54,8 +60,6 @@ try {
     // 3. ลบเมนู
     case 'delete_menu':
       $id = $request_data['id'];
-      // ป้องกันการลบเมนูของตัวเอง (ป้องกันเข้าหน้าจัดการไม่ได้)
-      // เช็คก่อนว่ากำลังลบเมนู "จัดการเมนู" หรือไม่ (Hardcode ป้องกันไว้)
       $chk = $conn->prepare("SELECT link FROM menus WHERE id = ?");
       $chk->execute([$id]);
       $m = $chk->fetch();

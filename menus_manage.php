@@ -21,7 +21,7 @@
           <thead>
           <tr>
             <th width="5%">ID</th>
-            <th width="10%" class="text-center">ไอคอน</th>
+            <th width="8%" class="text-center">ลำดับ</th> <th width="10%" class="text-center">ไอคอน</th>
             <th>ชื่อเมนู</th>
             <th>ลิงก์ไฟล์ (Link)</th>
             <th>สิทธิ์เข้าถึง (Roles)</th>
@@ -43,6 +43,11 @@
 
       <div class="p-6 space-y-4">
         <input type="hidden" id="menuId">
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">ลำดับการแสดงผล (Sort Order)</label>
+          <input type="number" id="inpMenuId" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ตัวเลข เช่น 1, 2, 3">
+        </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อเมนู (Display Name)</label>
@@ -104,6 +109,10 @@
       "columns": [
         { "data": "id" },
         {
+          "data": "menu_id",
+          "className": "text-center font-bold text-blue-600"
+        }, // เพิ่ม column menu_id
+        {
           "data": "icon",
           "className": "text-center text-blue-500 text-lg",
           "render": function(data) {
@@ -115,7 +124,6 @@
         {
           "data": "allowed_roles",
           "render": function(data) {
-            // แปลง string "admin,staff" เป็น Badges
             if(!data) return '-';
             return data.split(',').map(r => {
               if(r.trim() === 'admin') return '<span class="bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs mr-1">Admin</span>';
@@ -128,7 +136,6 @@
           "data": null,
           "className": "text-center",
           "render": function(data, type, row) {
-            // ส่ง Object เข้าไปในฟังก์ชัน (escape quote ให้ปลอดภัย)
             let jsonRow = JSON.stringify(row).replace(/"/g, '&quot;');
             return `
                             <button onclick="editMenu(${jsonRow})" class="text-yellow-500 hover:text-yellow-600 mx-1 p-1" title="แก้ไข"><i class="fas fa-edit"></i></button>
@@ -137,7 +144,7 @@
           }
         }
       ],
-      "order": [[ 0, "asc" ]]
+      "order": [[ 1, "asc" ]] // ตั้งค่าให้เรียงตาม Column ที่ 1 (menu_id) เป็นค่าเริ่มต้น
     });
 
     // Icon Preview Realtime
@@ -158,27 +165,26 @@
   function openModal() {
     $('#modalTitle').text('เพิ่มเมนูใหม่');
     $('#menuId').val('');
+    $('#inpMenuId').val(''); // เคลียร์ค่าลำดับ
     $('#inpName').val('');
     $('#inpLink').val('');
     $('#inpIcon').val('fa-circle');
     $('#iconPreview').html('<i class="fas fa-circle"></i>');
 
-    // Reset Checkbox (Default checked Staff & Admin)
     $('.role-check').prop('checked', true);
-
     $('#menuModal').removeClass('hidden');
   }
 
   function editMenu(menu) {
     $('#modalTitle').text('แก้ไขเมนู');
     $('#menuId').val(menu.id);
+    $('#inpMenuId').val(menu.menu_id); // ใส่ค่าลำดับเดิม
     $('#inpName').val(menu.name);
     $('#inpLink').val(menu.link);
     $('#inpIcon').val(menu.icon);
     $('#iconPreview').html(`<i class="fas ${menu.icon}"></i>`);
 
-    // Set Checkbox from data string (e.g., "admin,staff")
-    $('.role-check').prop('checked', false); // เคลียร์ก่อน
+    $('.role-check').prop('checked', false);
     let roles = menu.allowed_roles.split(',').map(r => r.trim());
     roles.forEach(r => {
       $(`.role-check[value="${r}"]`).prop('checked', true);
@@ -188,7 +194,6 @@
   }
 
   async function saveMenu() {
-    // เก็บค่าจาก Checkbox
     let selectedRoles = [];
     $('.role-check:checked').each(function() {
       selectedRoles.push($(this).val());
@@ -196,6 +201,7 @@
 
     const payload = {
       id: $('#menuId').val(),
+      menu_id: $('#inpMenuId').val(), // ส่งค่า menu_id ไปด้วย
       name: $('#inpName').val().trim(),
       link: $('#inpLink').val().trim(),
       icon: $('#inpIcon').val().trim(),
@@ -220,10 +226,10 @@
       if(result.success) {
         alert('✅ ' + result.message);
         $('#menuModal').addClass('hidden');
-        table.ajax.reload(); // รีโหลดตาราง
+        table.ajax.reload();
 
-        // [Optional] รีโหลด Sidebar หลักด้วย เพื่อให้เห็นเมนูเปลี่ยนทันที
-        if(typeof loadMenus === 'function' && currentUserData) {
+        // รีโหลด Sidebar ทันที (ถ้าฟังก์ชันมีอยู่จริง)
+        if(typeof loadMenus === 'function' && typeof currentUserData !== 'undefined') {
           loadMenus(currentUserData.role);
         }
       } else {
@@ -246,8 +252,7 @@
 
       if(result.success) {
         table.ajax.reload();
-        // รีโหลด Sidebar ถ้าจำเป็น
-        if(typeof loadMenus === 'function' && currentUserData) loadMenus(currentUserData.role);
+        if(typeof loadMenus === 'function' && typeof currentUserData !== 'undefined') loadMenus(currentUserData.role);
       } else {
         alert('ลบไม่สำเร็จ: ' + (result.message || ''));
       }
