@@ -224,6 +224,81 @@ try {
       else echo json_encode(["success" => false]);
       break;
 
+// --- 6. IMPORT DATA (Excel .xlsx & .xls) ---
+    case 'import_products':
+      if (!isset($_FILES['file']) || $_FILES['file']['error'] != 0) {
+        echo json_encode(["success" => false, "message" => "กรุณาเลือกไฟล์ Excel"]);
+        break;
+      }
+
+      $filename = $_FILES['file']['tmp_name'];
+      $ext = strtolower(pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION));
+
+      if (!in_array($ext, ['xlsx', 'xls'])) {
+        echo json_encode(["success" => false, "message" => "รองรับเฉพาะไฟล์ .xlsx หรือ .xls เท่านั้น"]);
+        break;
+      }
+
+      // โหลด Library ทั้งคู่
+      require_once 'SimpleXLSX.php';
+      require_once 'SimpleXLS.php';
+
+      $excel = null;
+
+      // เลือกตัวอ่านตามนามสกุล
+      if ($ext === 'xlsx') {
+        $excel = SimpleXLSX::parse($filename);
+      } elseif ($ext === 'xls') {
+        $excel = SimpleXLS::parse($filename);
+      }
+
+      try {
+        if ($excel) {
+          $conn->beginTransaction();
+
+          $sql = "INSERT INTO products (barcode, name, price) VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE name = VALUES(name), price = VALUES(price)";
+          $stmt = $conn->prepare($sql);
+
+          $count = 0;
+          $header_skipped = false;
+
+          // วนลูปอ่านข้อมูล (Library ทั้งสองตัวใช้คำสั่ง rows() เหมือนกัน)
+          foreach ($excel->rows() as $r) {
+            // $r[0] = Barcode, $r[1] = Name, $r[2] = Price
+
+            // เช็คเพื่อข้ามหัวตาราง (ถ้าเจอคำว่า barcode ในแถวแรก)
+            if (!$header_skipped && isset($r[0]) && strtolower(trim((string)$r[0])) == 'barcode') {
+              $header_skipped = true;
+              continue;
+            }
+
+            // ข้ามถ้าไม่มีข้อมูล Barcode
+            if (empty($r[0])) continue;
+
+            $barcode = trim((string)$r[0]);
+            $name    = trim((string)$r[1]);
+            $price   = floatval($r[2]);
+
+            $stmt->execute([$barcode, $name, $price]);
+            $count++;
+          }
+
+          $conn->commit();
+          echo json_encode(["success" => true, "message" => "นำเข้าข้อมูลสำเร็จ $count รายการ"]);
+
+        } else {
+          // ดึง Error จากตัวที่ทำงานผิดพลาด
+          $error = ($ext === 'xlsx') ? SimpleXLSX::parseError() : SimpleXLS::parseError();
+          echo json_encode(["success" => false, "message" => "อ่านไฟล์ไม่สำเร็จ: " . $error]);
+        }
+
+      } catch (Exception $e) {
+        $conn->rollBack();
+        echo json_encode(["success" => false, "message" => "DB Error: " . $e->getMessage()]);
+      }
+      break;
+
     default: echo json_encode(["message" => "Invalid Action"]);
   }
 } catch (PDOException $e) { echo json_encode(["success" => false, "message" => "DB Error: " . $e->getMessage()]); }
