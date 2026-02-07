@@ -1,17 +1,17 @@
 /*
  Navicat Premium Dump SQL
 
- Source Server         : MySQL-192.168.88.241
+ Source Server         : MySQL-Localhost
  Source Server Type    : MySQL
- Source Server Version : 80045 (8.0.45-0ubuntu0.24.04.1)
- Source Host           : 192.168.88.241:3307
+ Source Server Version : 90100 (9.1.0)
+ Source Host           : 192.168.88.40:3307
  Source Schema         : pos_system_dbs
 
  Target Server Type    : MySQL
- Target Server Version : 80045 (8.0.45-0ubuntu0.24.04.1)
+ Target Server Version : 90100 (9.1.0)
  File Encoding         : 65001
 
- Date: 07/02/2026 16:30:05
+ Date: 07/02/2026 17:45:05
 */
 
 SET NAMES utf8mb4;
@@ -64,7 +64,7 @@ CREATE TABLE `menus`  (
   `icon` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `allowed_roles` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = MyISAM AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of menus
@@ -76,6 +76,8 @@ INSERT INTO `menus` VALUES (4, 'ผู้ใช้งานระบบ', 'users
 INSERT INTO `menus` VALUES (5, 'กำหนดสิทธิ์', 'permissions.php', 'fa-user-lock', 'admin');
 INSERT INTO `menus` VALUES (6, 'จัดการเมนู', 'menus_manage.php', 'fa-list', 'admin');
 INSERT INTO `menus` VALUES (7, 'สมาชิก', 'members.php', 'fa-address-card', 'admin,staff');
+INSERT INTO `menus` VALUES (8, 'นำเข้าข้อมูลสินค้า', 'import_products.php', 'fa fa-table', 'admin,staff');
+INSERT INTO `menus` VALUES (9, 'หมวดหมู่สินค้า', 'categories.php', 'fa fa-bookmark', 'admin,staff');
 
 -- ----------------------------
 -- Table structure for order_items
@@ -125,18 +127,44 @@ CREATE TABLE `products`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `barcode` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `category_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `price` decimal(10, 2) NOT NULL,
+  `cost` decimal(10, 2) NULL DEFAULT 0.00,
+  `quantity` decimal(10, 2) NULL DEFAULT 0.00,
+  `min` decimal(10, 2) NULL DEFAULT 0.00,
+  `max` decimal(10, 2) NULL DEFAULT 0.00,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `barcode`(`barcode`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = MyISAM AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of products
 -- ----------------------------
-INSERT INTO `products` VALUES (1, '8850123', 'น้ำอัดลม', 15.00);
-INSERT INTO `products` VALUES (2, '8850456', 'ขนมปัง', 22.50);
-INSERT INTO `products` VALUES (3, '965500', 'ยาสีฟัน', 45.00);
-INSERT INTO `products` VALUES (4, '965501', 'แปรงสีฟัน', 20.00);
+INSERT INTO `products` VALUES (1, '8850123', 'น้ำอัดลม', '2', 15.00, 0.00, 0.00, 0.00, 0.00);
+INSERT INTO `products` VALUES (2, '8850456', 'ขนมปัง', '4', 22.50, 20.00, 50.00, 20.00, 60.00);
+INSERT INTO `products` VALUES (3, '9645500', 'ยาสีฟัน', '3', 45.00, 0.00, 0.00, 0.00, 0.00);
+INSERT INTO `products` VALUES (4, '9645501', 'แปรงสีฟัน', '3', 20.00, 0.00, 0.00, 0.00, 0.00);
+INSERT INTO `products` VALUES (5, '9645503', 'ทดสอบ 1', NULL, 0.00, 0.00, 0.00, 0.00, 0.00);
+INSERT INTO `products` VALUES (6, '9645567', 'ทดสอบ 2', NULL, 0.00, 0.00, 0.00, 0.00, 0.00);
+
+-- ----------------------------
+-- Table structure for products_categories
+-- ----------------------------
+DROP TABLE IF EXISTS `products_categories`;
+CREATE TABLE `products_categories`  (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `categories` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `detail` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of products_categories
+-- ----------------------------
+INSERT INTO `products_categories` VALUES (1, 'C-0001', 'อาหาร');
+INSERT INTO `products_categories` VALUES (2, 'C-0002', 'เครื่องดื่ม');
+INSERT INTO `products_categories` VALUES (3, 'C-0003', 'ของใช้ภายในบ้าน');
+INSERT INTO `products_categories` VALUES (4, 'C-0004', 'ขนม-ของขบเคี้ยว');
 
 -- ----------------------------
 -- Table structure for users
