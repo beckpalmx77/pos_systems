@@ -1,4 +1,5 @@
 {
-    "message": "An invalid response was received from the upstream server",
-    "request_id": "0c5cde225d8ad262bacf6026cd730568"
+    "status": "error",
+    "message": "Failed to connect to 192.168.88.241 port 8000 after 2022 ms: Couldn't connect to server",
+    "http_code": 0
 }

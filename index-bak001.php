@@ -17,8 +17,8 @@
           </div>
           <div class="flex gap-2">
             <input type="text" id="memberInput" class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48" placeholder="เบอร์โทร / รหัส">
-            <button onclick="findMember()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm shadow hover:bg-blue-700 transition"><i class="fas fa-search"></i></button>
-            <button onclick="resetMember()" class="bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm shadow hover:bg-gray-400 transition"><i class="fas fa-times"></i></button>
+            <button onclick="findMember()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm shadow"><i class="fas fa-search"></i></button>
+            <button onclick="resetMember()" class="bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm shadow"><i class="fas fa-times"></i></button>
           </div>
         </div>
 
@@ -26,7 +26,7 @@
           <div class="flex gap-2">
             <div class="relative flex-1">
               <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fas fa-barcode text-gray-400 text-xl"></i></div>
-              <input type="text" id="barcodeInput" class="w-full pl-12 pr-4 py-4 border-2 border-blue-500 rounded-lg text-xl focus:outline-none focus:ring-2 focus:ring-blue-300 transition" placeholder="ยิงบาร์โค้ด หรือ พิมพ์รหัส (F4)" autofocus>
+              <input type="text" id="barcodeInput" class="w-full pl-12 pr-4 py-4 border-2 border-blue-500 rounded-lg text-xl focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="ยิงบาร์โค้ด หรือ พิมพ์รหัส (F4)" autofocus>
             </div>
             <button onclick="triggerSearchProduct()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-lg font-bold shadow transition">
               <i class="fas fa-check"></i> ตกลง
@@ -34,7 +34,7 @@
           </div>
         </div>
 
-        <div class="flex-1 overflow-auto relative">
+        <div class="flex-1 overflow-auto">
           <table class="w-full text-left border-collapse">
             <thead class="bg-gray-100 sticky top-0 shadow-sm z-10">
             <tr>
@@ -47,63 +47,27 @@
             </thead>
             <tbody id="cartTable" class="divide-y divide-gray-100"></tbody>
           </table>
-          <div id="emptyCart" class="flex flex-col items-center justify-center h-40 text-gray-400 mt-10">
-            <i class="fas fa-box-open text-5xl mb-3 opacity-50"></i>
-            <p class="text-lg">รายการว่าง</p>
+          <div id="emptyCart" class="flex flex-col items-center justify-center h-40 text-gray-400">
+            <i class="fas fa-box-open text-4xl mb-2 opacity-50"></i>
+            <p>รายการว่าง</p>
           </div>
         </div>
 
         <div class="p-6 bg-slate-50 border-t border-gray-200">
-
-          <div class="grid grid-cols-2 gap-3 mb-4">
-            <button onclick="holdBill()" class="bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-bold shadow transition flex justify-center items-center gap-2">
-              <i class="fas fa-pause-circle"></i> พักบิลชั่วคราว
-            </button>
-            <button onclick="showHeldBills()" class="bg-purple-500 hover:bg-purple-600 text-white py-2 rounded-lg font-bold shadow transition flex justify-center items-center gap-2">
-              <i class="fas fa-hand-holding"></i> เรียกบิลคืน <span id="heldBillCount" class="bg-white text-purple-600 text-xs px-2 py-0.5 rounded-full hidden">0</span>
-            </button>
-          </div>
-
-          <div class="flex justify-between items-end mb-4 border-t pt-4 border-gray-200">
+          <div class="flex justify-between items-end mb-4">
             <div class="text-gray-500">จำนวน: <span id="totalItems" class="font-bold text-gray-800">0</span> ชิ้น</div>
             <div class="text-right">
               <p class="text-xs text-gray-500">ยอดสุทธิ</p>
               <h2 class="text-4xl font-bold text-blue-600">฿<span id="grandTotal">0.00</span></h2>
             </div>
           </div>
-
-          <button onclick="submitOrder()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-2xl font-bold py-4 rounded-xl shadow-lg transition transform active:scale-[0.98] flex justify-center items-center gap-2">
-            <i class="fas fa-print"></i> ยืนยันการขาย (Print)
+          <button onclick="submitOrder()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-xl font-bold py-4 rounded-xl shadow-lg transition transform active:scale-[0.98]">
+            <i class="fas fa-print mr-2"></i> ยืนยันการขาย (Print)
           </button>
         </div>
       </div>
     </div>
   </main>
-
-  <div id="heldBillsModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex justify-center items-center z-50 backdrop-blur-sm transition-opacity duration-300">
-    <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] transform transition-all scale-100">
-      <div class="p-4 bg-purple-600 text-white flex justify-between items-center">
-        <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-list-alt"></i> รายการบิลที่พักไว้</h3>
-        <button onclick="$('#heldBillsModal').addClass('hidden')" class="text-white hover:text-gray-200 text-3xl font-bold">&times;</button>
-      </div>
-      <div class="flex-1 overflow-auto p-0">
-        <table class="w-full text-left border-collapse">
-          <thead class="bg-purple-50 text-purple-900 sticky top-0">
-          <tr>
-            <th class="p-4 font-semibold">เวลาพักบิล</th>
-            <th class="p-4 font-semibold">หมายเหตุ / ลูกค้า</th>
-            <th class="p-4 font-semibold text-right">ยอดรวม</th>
-            <th class="p-4 font-semibold text-center">จัดการ</th>
-          </tr>
-          </thead>
-          <tbody id="heldBillsList" class="divide-y divide-purple-100"></tbody>
-        </table>
-      </div>
-      <div class="p-4 bg-gray-50 border-t flex justify-end">
-        <button onclick="$('#heldBillsModal').addClass('hidden')" class="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded-lg font-bold transition">ปิดหน้าต่าง</button>
-      </div>
-    </div>
-  </div>
 
   <script>
     const API_URL = 'api/basic_api.php';
@@ -112,16 +76,11 @@
 
     $(document).ready(function() {
       if(localStorage.getItem('pos_user')) $('#barcodeInput').focus();
-
-      // ตั้งค่า Alertify
       if(typeof alertify !== 'undefined') {
         alertify.defaults.glossary.title = 'แจ้งเตือน';
         alertify.defaults.glossary.ok = 'ตกลง';
         alertify.defaults.glossary.cancel = 'ยกเลิก';
       }
-
-      // โหลดจำนวนบิลที่พักไว้ (ถ้ามี)
-      updateHeldBillCount();
     });
 
     // --- 1. MEMBER LOGIC ---
@@ -164,7 +123,7 @@
     }
 
 
-    // --- 2. BARCODE LOGIC ---
+    // --- 2. BARCODE LOGIC (Enter + Click) ---
     $('#barcodeInput').on('keydown', function(e) {
       if (e.which === 13 || e.key === 'Enter') {
         e.preventDefault();
@@ -220,7 +179,7 @@
         total += sum; qty += item.qty;
 
         tbody.append(`
-        <tr class="hover:bg-blue-50 transition border-b group">
+        <tr class="hover:bg-blue-50 transition border-b">
             <td class="py-3 px-4">
                 <div class="font-bold text-gray-700">${item.name}</div>
                 <div class="text-xs text-gray-400 font-mono">${item.barcode || ''}</div>
@@ -235,7 +194,7 @@
             </td>
             <td class="py-3 px-4 text-right font-bold text-blue-600">${sum.toFixed(2)}</td>
             <td class="py-3 px-4 text-center">
-                <button onclick="remove(${idx})" class="text-red-300 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded-full transition shadow-sm opacity-0 group-hover:opacity-100">
+                <button onclick="remove(${idx})" class="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded-full transition shadow-sm">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </td>
@@ -261,7 +220,7 @@
       $('#barcodeInput').focus();
     }
 
-    // --- 4. SUBMIT ORDER ---
+    // --- 4. SUBMIT & API RESPONSE ---
     function submitOrder() {
       if(cart.length === 0) return alertify.alert('แจ้งเตือน', 'ไม่มีสินค้าในตะกร้า');
 
@@ -287,6 +246,8 @@
         const result = await res.json();
 
         if(result.success) {
+
+          // ตรวจสอบ Response จาก API Gateway (ถ้ามี)
           let extraMsg = "";
           if(result.gateway_result && result.gateway_result.payment_url) {
             window.open(result.gateway_result.payment_url, '_blank');
@@ -310,123 +271,6 @@
       }
     }
 
-    // --- 5. ฟังก์ชัน พักบิล (HOLD BILL) ---
-    function holdBill() {
-      if(cart.length === 0) return alertify.alert('แจ้งเตือน', 'ไม่มีรายการสินค้าให้พัก');
-
-      alertify.prompt( 'พักบิลชั่วคราว', 'ระบุชื่อลูกค้า หรือ หมายเหตุ:', 'ลูกค้าทั่วไป',
-        async function(evt, value) {
-          try {
-            const payload = {
-              note: value,
-              items: cart,
-              total: parseFloat($('#grandTotal').text().replace(/,/g,''))
-            };
-
-            const res = await fetch(`${API_URL}?action=hold_bill`, {
-              method: 'POST',
-              body: JSON.stringify(payload)
-            });
-            const result = await res.json();
-
-            if(result.success) {
-              alertify.success('พักบิลเรียบร้อย');
-              clearScreen();
-              updateHeldBillCount(); // อัปเดตตัวเลขแจ้งเตือน
-            } else {
-              alertify.error('เกิดข้อผิดพลาดในการพักบิล');
-            }
-          } catch(e) { console.error(e); }
-        },
-        function() { }
-      ).set('labels', {ok:'ยืนยัน', cancel:'ยกเลิก'});
-    }
-
-    // --- 6. ฟังก์ชัน เรียกบิลคืน (RESTORE BILL) ---
-    async function showHeldBills() {
-      try {
-        const res = await fetch(`${API_URL}?action=get_held_bills`);
-        const bills = await res.json();
-
-        const tbody = $('#heldBillsList');
-        tbody.empty();
-
-        if(bills.length === 0) {
-          tbody.html('<tr><td colspan="4" class="text-center p-8 text-gray-400">ไม่มีบิลที่พักไว้</td></tr>');
-        } else {
-          bills.forEach(b => {
-            // แปลงเวลาให้สวยงาม
-            const time = new Date(b.created_at).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'});
-
-            tbody.append(`
-                        <tr class="hover:bg-purple-50 transition border-b">
-                            <td class="p-4 text-gray-600 font-mono"><span class="bg-gray-100 px-2 py-1 rounded border">${time}</span></td>
-                            <td class="p-4 font-bold text-gray-800">${b.reference_note}</td>
-                            <td class="p-4 text-right font-bold text-purple-600">${parseFloat(b.total_amount).toLocaleString('th-TH', {minimumFractionDigits:2})}</td>
-                            <td class="p-4 text-center space-x-2">
-                                <button onclick='restoreBill(${JSON.stringify(b)})' class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg shadow font-bold text-sm transition transform active:scale-95">
-                                    <i class="fas fa-play mr-1"></i> เรียกคืน
-                                </button>
-                                <button onclick="deleteHeldBill(${b.id})" class="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-2 rounded-lg shadow font-bold text-sm transition">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `);
-          });
-        }
-        $('#heldBillsModal').removeClass('hidden'); // เปิด Modal
-      } catch(e) { console.error(e); }
-    }
-
-    async function restoreBill(bill) {
-      if(cart.length > 0) {
-        if(!confirm('มีรายการสินค้าค้างอยู่ ต้องการเคลียร์ทิ้งและเรียกบิลนี้มาแทนหรือไม่?')) return;
-      }
-
-      // Parse JSON String กลับเป็น Object
-      let items = (typeof bill.items === 'string') ? JSON.parse(bill.items) : bill.items;
-
-      cart = items;
-      renderCart();
-
-      // ลบบิลออกจาก DB ทันทีที่เรียกคืน
-      await deleteHeldBill(bill.id, false);
-
-      $('#heldBillsModal').addClass('hidden');
-      alertify.success(`เรียกคืนบิล: ${bill.reference_note}`);
-      updateHeldBillCount();
-    }
-
-    async function deleteHeldBill(id, refresh = true) {
-      if(refresh && !confirm('ต้องการลบบิลนี้ทิ้งใช่หรือไม่?')) return;
-
-      try {
-        await fetch(`${API_URL}?action=delete_held_bill`, {
-          method: 'POST',
-          body: JSON.stringify({id: id})
-        });
-        if(refresh) showHeldBills();
-        updateHeldBillCount();
-      } catch(e) { console.error(e); }
-    }
-
-    // อัปเดตตัวเลขจำนวนบิลที่พักไว้ที่ปุ่ม
-    async function updateHeldBillCount() {
-      try {
-        const res = await fetch(`${API_URL}?action=get_held_bills`);
-        const bills = await res.json();
-        const count = bills.length;
-
-        if(count > 0) {
-          $('#heldBillCount').text(count).removeClass('hidden');
-        } else {
-          $('#heldBillCount').addClass('hidden');
-        }
-      } catch(e) {}
-    }
-
-    // --- Utility ---
     function clearScreen() {
       cart = [];
       resetMember();
