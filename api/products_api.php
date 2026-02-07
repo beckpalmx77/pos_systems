@@ -24,17 +24,21 @@ try {
       $id = $request_data['id'] ?? '';
       $barcode = trim($request_data['barcode']);
       $name = trim($request_data['name']);
-      $price = $request_data['price'];
 
-      if(empty($barcode) || empty($name) || empty($price)) {
-        echo json_encode(["success" => false, "message" => "กรุณากรอกข้อมูลให้ครบ"]);
+      // แปลงค่าตัวเลข (ถ้าว่างให้เป็น 0)
+      $price = !empty($request_data['price']) ? $request_data['price'] : 0;
+      $cost = !empty($request_data['cost']) ? $request_data['cost'] : 0;
+      $quantity = !empty($request_data['quantity']) ? $request_data['quantity'] : 0; // ชื่อ field ใน DB คือ quantity
+      $min = !empty($request_data['min']) ? $request_data['min'] : 0;
+      $max = !empty($request_data['max']) ? $request_data['max'] : 0;
+
+      if(empty($barcode) || empty($name)) {
+        echo json_encode(["success" => false, "message" => "กรุณากรอกชื่อและบาร์โค้ด"]);
         break;
       }
 
       if (empty($id)) {
         // --- เพิ่มใหม่ (INSERT) ---
-
-        // เช็คบาร์โค้ดซ้ำ
         $chk = $conn->prepare("SELECT id FROM products WHERE barcode = ?");
         $chk->execute([$barcode]);
         if($chk->fetch()) {
@@ -42,15 +46,14 @@ try {
           break;
         }
 
-        $sql = "INSERT INTO products (barcode, name, price) VALUES (?, ?, ?)";
+        // เพิ่ม field min, max, quantity
+        $sql = "INSERT INTO products (barcode, name, price, cost, quantity, min, max) VALUES (?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        if($stmt->execute([$barcode, $name, $price])) {
+        if($stmt->execute([$barcode, $name, $price, $cost, $quantity, $min, $max])) {
           echo json_encode(["success" => true, "message" => "เพิ่มสินค้าเรียบร้อย"]);
         }
       } else {
         // --- แก้ไข (UPDATE) ---
-
-        // เช็คบาร์โค้ดซ้ำ (ต้องไม่ซ้ำกับคนอื่น ยกเว้นตัวเอง)
         $chk = $conn->prepare("SELECT id FROM products WHERE barcode = ? AND id != ?");
         $chk->execute([$barcode, $id]);
         if($chk->fetch()) {
@@ -58,9 +61,10 @@ try {
           break;
         }
 
-        $sql = "UPDATE products SET barcode=?, name=?, price=? WHERE id=?";
+        // อัปเดต field min, max, quantity
+        $sql = "UPDATE products SET barcode=?, name=?, price=?, cost=?, quantity=?, min=?, max=? WHERE id=?";
         $stmt = $conn->prepare($sql);
-        if($stmt->execute([$barcode, $name, $price, $id])) {
+        if($stmt->execute([$barcode, $name, $price, $cost, $quantity, $min, $max, $id])) {
           echo json_encode(["success" => true, "message" => "แก้ไขสินค้าเรียบร้อย"]);
         }
       }

@@ -24,8 +24,11 @@
           <tr>
             <th width="15%">Barcode</th>
             <th>ชื่อสินค้า</th>
-            <th class="text-right" width="15%">ราคา</th>
-            <th class="text-center" width="15%">จัดการ</th>
+            <th class="text-right" width="10%">ทุน</th>
+            <th class="text-right" width="10%">ราคาขาย</th>
+            <th class="text-center" width="10%">คงเหลือ</th>
+            <th class="text-center" width="10%">Min/Max</th>
+            <th class="text-center" width="10%">จัดการ</th>
           </tr>
           </thead>
           <tbody></tbody>
@@ -35,7 +38,7 @@
   </div>
 
   <div id="productModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex justify-center items-center backdrop-blur-sm">
-    <div class="bg-white rounded-lg shadow-xl w-96 overflow-hidden">
+    <div class="bg-white rounded-lg shadow-xl w-[500px] overflow-hidden">
       <div class="p-4 bg-gray-100 border-b flex justify-between items-center">
         <h3 id="modalTitle" class="text-lg font-bold text-gray-700">เพิ่มสินค้า</h3>
         <button id="btnCloseModal" class="text-gray-500 hover:text-red-500 text-2xl font-bold px-2">&times;</button>
@@ -59,10 +62,35 @@
           <input type="text" id="inpName" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ระบุชื่อสินค้า">
         </div>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">ราคาขาย</label>
-          <input type="number" step="0.01" id="inpPrice" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" placeholder="0.00">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ราคาทุน (Cost)</label>
+            <input type="number" step="0.01" id="inpCost" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" placeholder="0.00">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ราคาขาย (Price)</label>
+            <input type="number" step="0.01" id="inpPrice" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-right" placeholder="0.00">
+          </div>
         </div>
+
+        <div class="border-t border-gray-100 pt-2 mt-2">
+          <label class="block text-sm font-bold text-gray-700 mb-2">การจัดการสต็อก</label>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">คงเหลือ (Qty)</label>
+              <input type="number" id="inpQuantity" class="w-full border border-blue-300 bg-blue-50 px-3 py-2 rounded text-right font-bold text-blue-700" placeholder="0">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">ขั้นต่ำ (Min)</label>
+              <input type="number" id="inpMin" class="w-full border border-gray-300 px-3 py-2 rounded text-right" placeholder="0">
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">สูงสุด (Max)</label>
+              <input type="number" id="inpMax" class="w-full border border-gray-300 px-3 py-2 rounded text-right" placeholder="0">
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div class="p-4 bg-gray-50 border-t flex justify-end gap-2">
@@ -91,23 +119,60 @@
       "columns": [
         {
           "data": "barcode",
+          "defaultContent": "-", // ป้องกัน Error หากไม่มีข้อมูล
           "className": "font-mono font-bold text-blue-600",
           "render": function(data) {
-            // แสดงไอคอนเล็กๆ หน้าบาร์โค้ดในตาราง
             return `<i class="fas fa-barcode text-gray-400 mr-1"></i> ${data}`;
           }
         },
-        { "data": "name" },
+        {
+          "data": "name",
+          "defaultContent": "ไม่ระบุชื่อ"
+        },
+        {
+          "data": "cost",
+          "defaultContent": "0", // *** สำคัญ: ใส่ค่า Default ป้องกัน Error
+          "className": "text-right text-gray-500",
+          "render": function(data) {
+            return $.fn.dataTable.render.number(',', '.', 2, '').display(data || 0);
+          }
+        },
         {
           "data": "price",
-          "className": "text-right font-bold",
-          "render": $.fn.dataTable.render.number(',', '.', 2, '')
+          "defaultContent": "0",
+          "className": "text-right font-bold text-green-600",
+          "render": function(data) {
+            return $.fn.dataTable.render.number(',', '.', 2, '').display(data || 0);
+          }
+        },
+        {
+          "data": "quantity", // ใช้ชื่อฟิลด์ quantity ตาม SQL
+          "defaultContent": "0",
+          "className": "text-center font-bold",
+          "render": function(data, type, row) {
+            let qty = parseFloat(data || 0);
+            let min = parseFloat(row.min || 0);
+
+            // แจ้งเตือน: ถ้าน้อยกว่าขั้นต่ำ -> สีแดงกระพริบ
+            if(qty <= min && min > 0) return `<span class="text-red-600 bg-red-100 px-2 py-1 rounded text-xs animate-pulse">${qty}</span>`;
+            // แจ้งเตือน: ถ้าหมด -> แสดงคำว่า "หมด"
+            if(qty <= 0) return `<span class="text-gray-400 bg-gray-100 px-2 py-1 rounded text-xs">หมด</span>`;
+
+            return `<span class="text-gray-700 bg-gray-100 px-2 py-1 rounded text-xs">${qty}</span>`;
+          }
+        },
+        {
+          "data": null,
+          "className": "text-center text-xs text-gray-400",
+          "render": function(data, type, row) {
+            // แสดง Min / Max (ใส่ - ถ้าไม่มีข้อมูล)
+            return `${row.min || '-'} / ${row.max || '-'}`;
+          }
         },
         {
           "data": null,
           "className": "text-center",
           "render": function(data, type, row) {
-            // ต้อง escape ข้อมูลเพื่อความปลอดภัยเวลาส่งเข้าฟังก์ชัน
             return `
                 <button class="btn-edit text-yellow-500 hover:text-yellow-600 mx-1 p-1" title="แก้ไข">
                     <i class="fas fa-edit fa-lg"></i>
@@ -122,22 +187,25 @@
       "order": [[ 0, "desc" ]]
     });
 
-    // 2. Event: กดปุ่มแก้ไข (Load สินค้า)
+    // 2. Event: กดปุ่มแก้ไข (โหลดข้อมูลเข้า Modal)
     $('#productsTable tbody').on('click', '.btn-edit', function () {
       let tr = $(this).closest('tr');
       let row = table.row(tr);
       let data = row.data();
 
-      // เปิด Modal พร้อมข้อมูลเก่า
       $('#modalTitle').text('แก้ไขสินค้า');
       $('#prodId').val(data.id);
       $('#inpBarcode').val(data.barcode);
       $('#inpName').val(data.name);
-      $('#inpPrice').val(data.price);
 
-      // [3] Gen Barcode ทันทีที่โหลดข้อมูลมา
+      // Load ข้อมูลตัวเลข (ถ้าไม่มีให้ใส่ 0)
+      $('#inpPrice').val(data.price || 0);
+      $('#inpCost').val(data.cost || 0);
+      $('#inpQuantity').val(parseFloat(data.quantity || 0));
+      $('#inpMin').val(parseFloat(data.min || 0));
+      $('#inpMax').val(parseFloat(data.max || 0));
+
       genBar(data.barcode);
-
       $('#productModal').removeClass('hidden');
     });
 
@@ -147,29 +215,23 @@
       let row = table.row(tr);
       let data = row.data();
 
+      // ใช้ confirm หรือ Alertify ก็ได้
       if(confirm(`ยืนยันลบสินค้า "${data.name}" ?`)) {
         deleteProduct(data.id);
       }
     });
 
-    // 4. ปุ่มปิด Modal
-    $('#btnCloseModal, #btnCancel').click(function() {
-      $('#productModal').addClass('hidden');
-    });
+    // 4. ปุ่มปิด Modal / คลิกพื้นหลังปิด
+    $('#btnCloseModal, #btnCancel').click(function() { $('#productModal').addClass('hidden'); });
+    $('#productModal').on('click', function(e) { if (e.target === this) $('#productModal').addClass('hidden'); });
 
-    // คลิกพื้นหลังปิด
-    $('#productModal').on('click', function(e) {
-      if (e.target === this) $('#productModal').addClass('hidden');
-    });
-
-    // [4] Event: เมื่อพิมพ์รหัสบาร์โค้ด (Keyup/Input)
-    $('#inpBarcode').on('input', function() {
-      let code = $(this).val();
-      genBar(code);
-    });
+    // 5. Event: พิมพ์ Barcode -> สร้างภาพอัตโนมัติ
+    $('#inpBarcode').on('input', function() { genBar($(this).val()); });
   });
 
-  // [5] ฟังก์ชัน Gen Barcode
+  // --- Functions ---
+
+  // สร้าง Barcode SVG
   function genBar(code) {
     if(code && code.trim() !== "") {
       $('#barcodePlaceholder').addClass('hidden');
@@ -185,26 +247,29 @@
           margin: 0
         });
       } catch(e) {
-        // กรณีพิมพ์ภาษาไทย หรือรหัสผิด format
         $('#barcodePreview').addClass('hidden');
         $('#barcodePlaceholder').removeClass('hidden').text('รหัสไม่ถูกต้อง');
       }
     } else {
-      // ถ้าช่องว่าง
       $('#barcodePreview').addClass('hidden');
       $('#barcodePlaceholder').removeClass('hidden').text('ภาพบาร์โค้ดจะปรากฏที่นี่');
     }
   }
 
-  // ฟังก์ชันเปิด Modal เพิ่มใหม่
+  // เปิด Modal เพิ่มสินค้าใหม่
   function openModal() {
     $('#modalTitle').text('เพิ่มสินค้าใหม่');
+    // เคลียร์ค่าทุกช่อง
     $('#prodId').val('');
     $('#inpBarcode').val('');
     $('#inpName').val('');
     $('#inpPrice').val('');
+    $('#inpCost').val('');
+    $('#inpQuantity').val('');
+    $('#inpMin').val('');
+    $('#inpMax').val('');
 
-    // เคลียร์ภาพบาร์โค้ด
+    // Reset Barcode Preview
     $('#barcodePreview').addClass('hidden');
     $('#barcodePlaceholder').removeClass('hidden').text('ภาพบาร์โค้ดจะปรากฏที่นี่');
 
@@ -212,18 +277,20 @@
     setTimeout(() => $('#inpBarcode').focus(), 100);
   }
 
-  // ฟังก์ชันบันทึก
+  // บันทึกข้อมูล
   async function saveProduct() {
     const payload = {
       id: $('#prodId').val(),
       barcode: $('#inpBarcode').val().trim(),
       name: $('#inpName').val().trim(),
-      price: $('#inpPrice').val().trim()
+      price: $('#inpPrice').val().trim(),
+      cost: $('#inpCost').val().trim(),
+      quantity: $('#inpQuantity').val().trim(),
+      min: $('#inpMin').val().trim(),
+      max: $('#inpMax').val().trim()
     };
 
-    if(!payload.barcode || !payload.name || !payload.price) {
-      return alert('กรุณากรอกข้อมูลให้ครบทุกช่อง');
-    }
+    if(!payload.barcode || !payload.name) return alert('กรุณากรอกชื่อและบาร์โค้ด');
 
     try {
       const res = await fetch(`${API_URL}?action=save_product`, {
@@ -233,19 +300,22 @@
       const result = await res.json();
 
       if(result.success) {
-        alert('✅ ' + result.message);
+        // ใช้ Alertify ถ้ามี หรือใช้ alert ธรรมดา
+        if(typeof alertify !== 'undefined') alertify.success(result.message);
+        else alert('✅ ' + result.message);
+
         $('#productModal').addClass('hidden');
         table.ajax.reload();
       } else {
-        alert('❌ Error: ' + result.message);
+        alert('❌ ' + result.message);
       }
     } catch(e) {
       console.error(e);
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      alert('Connection Error');
     }
   }
 
-  // ฟังก์ชันลบ
+  // ลบสินค้า
   async function deleteProduct(id) {
     try {
       const res = await fetch(`${API_URL}?action=delete_product`, {
@@ -254,11 +324,9 @@
       });
       const result = await res.json();
 
-      if(result.success) {
-        table.ajax.reload();
-      } else {
-        alert('ลบไม่สำเร็จ');
-      }
+      if(result.success) table.ajax.reload();
+      else alert('ลบไม่สำเร็จ');
+
     } catch(e) {
       alert('Error deleting product');
     }
