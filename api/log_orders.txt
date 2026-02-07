@@ -1,0 +1,5 @@
+--- Received Order at 2026-02-07 07:23:47 ---
+Transaction ID: ORD-202602-00008
+Amount: 45
+Raw Data: {"transaction_id":"ORD-202602-00008","timestamp":"2026-02-07T14:23:49+07:00","shop_id":"BRANCH_001","cashier":"Admin Manager","member_id":null,"total_amount":45,"items":[{"product_id":2,"barcode":"8850456","name":"\u0e02\u0e19\u0e21\u0e1b\u0e31\u0e07","price":22.5,"qty":2,"line_total":45}]}
+
