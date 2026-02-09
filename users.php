@@ -169,7 +169,8 @@
 
       if(result.success) {
         // 3. แสดงผลสำเร็จ
-        alertify.success('✅ บันทึกข้อมูลเรียบร้อยแล้ว');
+        //alertify.success('✅ บันทึกข้อมูลเรียบร้อยแล้ว');
+        alertify.success('บันทึกข้อมูลเรียบร้อยแล้ว');
         closeModal();
         table.ajax.reload();
       } else {

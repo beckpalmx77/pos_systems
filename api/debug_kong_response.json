@@ -1,5 +1,6 @@
 {
-    "status": "error",
-    "message": "Failed to connect to 192.168.88.241 port 8000 after 2022 ms: Couldn't connect to server",
-    "http_code": 0
+    "status": "success",
+    "message": "Order received at HQ Server",
+    "received_tx": "ORD-202602-00001",
+    "hq_timestamp": "2026-02-09T06:00:37+00:00"
 }

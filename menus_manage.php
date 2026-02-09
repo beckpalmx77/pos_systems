@@ -291,7 +291,8 @@
       const result = await res.json();
 
       if(result.success) {
-        alertify.success('✅ ' + result.message);
+        //alertify.success('✅ ' + result.message);
+        alertify.success(result.message);
         $('#menuModal').addClass('hidden');
         table.ajax.reload();
 
