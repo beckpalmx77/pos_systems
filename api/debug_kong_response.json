@@ -1,6 +1,6 @@
 {
     "status": "success",
     "message": "Order received at HQ Server",
-    "received_tx": "ORD-202602-00001",
-    "hq_timestamp": "2026-02-09T06:00:37+00:00"
+    "received_tx": "ORD-202602-00002",
+    "hq_timestamp": "2026-02-09T09:08:09+00:00"
 }

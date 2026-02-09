@@ -5,12 +5,12 @@
   <script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
 
   <style>
+    /* ปรับแต่ง Alertify */
     .alertify-notifier .ajs-message.ajs-success { background-color: #10b981; color: white; }
     .alertify-notifier .ajs-message.ajs-error { background-color: #ef4444; color: white; }
     .alertify-notifier .ajs-message.ajs-warning { background-color: #f59e0b; color: white; }
-    /* ปรับปุ่มใน Modal Alertify */
-    .ajs-button.ajs-ok { background-color: #10b981 !important; color: white; font-weight: bold; }
-    .ajs-button.ajs-cancel { background-color: #6b7280 !important; color: white; }
+    .ajs-button.ajs-ok { background-color: #10b981 !important; color: white; font-weight: bold; border-radius: 6px; }
+    .ajs-button.ajs-cancel { background-color: #6b7280 !important; color: white; border-radius: 6px; }
   </style>
 
 <?php include 'layouts/sidebar.php'; ?>
@@ -72,8 +72,14 @@
             <button onclick="holdBill()" class="bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-bold shadow transition flex justify-center items-center gap-2">
               <i class="fas fa-pause-circle"></i> พักบิลชั่วคราว
             </button>
-            <button onclick="showHeldBills()" class="bg-purple-500 hover:bg-purple-600 text-white py-2 rounded-lg font-bold shadow transition flex justify-center items-center gap-2">
-              <i class="fas fa-hand-holding"></i> เรียกบิลคืน <span id="heldBillCount" class="bg-white text-purple-600 text-xs px-2 py-0.5 rounded-full hidden">0</span>
+
+            <button onclick="showHeldBills()" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg font-bold shadow transition flex justify-center items-center gap-2 border border-purple-400">
+              <i class="fas fa-hand-holding"></i>
+              <span>เรียกบิลคืน</span>
+
+              <span id="btnHeldCount" class="ml-2 bg-red-600 text-white text-xs font-extrabold px-2 py-0.5 rounded-full shadow-sm border border-white hidden">
+                            0
+                        </span>
             </button>
           </div>
 
@@ -182,7 +188,7 @@
     $(document).ready(function() {
       if(localStorage.getItem('pos_user')) $('#barcodeInput').focus();
 
-      // 1. ตั้งค่า Alertify Defaults
+      // Init Alertify
       if(typeof alertify !== 'undefined') {
         alertify.defaults.glossary.title = 'แจ้งเตือน';
         alertify.defaults.glossary.ok = 'ตกลง';
@@ -191,8 +197,48 @@
         alertify.defaults.theme.ok = "ui positive button";
         alertify.defaults.theme.cancel = "ui black button";
       }
+
+      // 1. เรียกนับจำนวนทันทีที่โหลดหน้าเสร็จ
+      updateHeldBillCount();
+
+      // 2. ตั้งเวลาให้เช็คซ้ำทุก 3 วินาที (เพื่อให้แน่ใจว่าตัวเลขไม่หาย)
+      setInterval(updateHeldBillCount, 3000);
+    });
+
+    // 3. เรียกนับจำนวนเมื่อกลับมาที่หน้าจอ
+    $(window).on('focus pageshow', function() {
       updateHeldBillCount();
     });
+
+    // --- ฟังก์ชันอัปเดตตัวเลข (Fix: เปลี่ยนมาใช้ ID btnHeldCount) ---
+    async function updateHeldBillCount() {
+      try {
+        // ใส่ &t=... กัน Browser Cache
+        const res = await fetch(`${API_URL}?action=get_held_bills&t=${new Date().getTime()}`);
+        if (!res.ok) return;
+
+        const bills = await res.json();
+        const count = bills.length;
+
+        // ใช้ ID ใหม่: btnHeldCount
+        const badge = $('#btnHeldCount');
+
+        // Debug ดูค่าใน Console
+        // console.log('Held Bills:', count);
+
+        if (count > 0) {
+          badge.text(count);
+          // สั่งแสดงผล
+          badge.removeClass('hidden');
+          badge.css('display', 'inline-flex'); // บังคับ Flexbox เพื่อจัดกลาง
+        } else {
+          badge.addClass('hidden');
+          badge.css('display', 'none');
+        }
+      } catch (e) {
+        console.error("Update count error:", e);
+      }
+    }
 
     // --- MEMBER SEARCH ---
     function openMemberSearchModal() {
@@ -273,7 +319,7 @@
       } catch(e) {} $('#barcodeInput').focus();
     }
 
-    // --- CART LOGIC ---
+    // --- CART ---
     function addToCart(p) { const price = parseFloat(p.price); const exist = cart.find(i => i.id === p.id); if(exist) exist.qty++; else cart.push({...p, price: price, qty: 1}); renderCart(); alertify.success(`+ ${p.name}`); }
 
     function renderCart() {
@@ -307,7 +353,7 @@
     }
     function remove(idx) { cart.splice(idx, 1); renderCart(); $('#barcodeInput').focus(); }
 
-    // --- ORDER LOGIC ---
+    // --- ORDER ---
     function submitOrder() {
       if(cart.length === 0) return alertify.alert('แจ้งเตือน', 'ไม่มีสินค้าในตะกร้า');
       alertify.confirm('ยืนยันการขาย', 'ต้องการบันทึกยอดขายหรือไม่?', async function(){ await processOrder(); }, function(){} ).set('labels', {ok:'บันทึกขาย', cancel:'ยกเลิก'});
@@ -327,7 +373,7 @@
       } catch(e) { alertify.error('Error'); }
     }
 
-    // --- HELD BILL LOGIC ---
+    // --- HELD BILLS ---
     function holdBill() {
       if(cart.length === 0) return alertify.alert('แจ้งเตือน', 'ไม่มีรายการสินค้าให้พัก');
       alertify.prompt( 'พักบิลชั่วคราว', 'ระบุชื่อลูกค้า หรือ หมายเหตุ:', 'ลูกค้าทั่วไป',
@@ -336,7 +382,11 @@
             const payload = { note: value, items: cart, total: parseFloat($('#grandTotal').text().replace(/,/g,'')) };
             const res = await fetch(`${API_URL}?action=hold_bill`, { method: 'POST', body: JSON.stringify(payload) });
             const result = await res.json();
-            if(result.success) { alertify.success('พักบิลเรียบร้อย'); clearScreen(); updateHeldBillCount(); }
+            if(result.success) {
+              alertify.success('พักบิลเรียบร้อย');
+              clearScreen();
+              updateHeldBillCount();
+            }
             else { alertify.error('เกิดข้อผิดพลาดในการพักบิล'); }
           } catch(e) { console.error(e); }
         }, function() { }
@@ -345,7 +395,7 @@
 
     async function showHeldBills() {
       try {
-        const res = await fetch(`${API_URL}?action=get_held_bills`);
+        const res = await fetch(`${API_URL}?action=get_held_bills&t=${new Date().getTime()}`);
         const bills = await res.json();
         const tbody = $('#heldBillsList');
         tbody.empty();
@@ -369,12 +419,11 @@
       } catch(e) {}
     }
 
-    // 2. ปรับ RestoreBill ให้รองรับ Alertify
     async function restoreBill(bill) {
       const processRestore = async () => {
         let items = (typeof bill.items === 'string') ? JSON.parse(bill.items) : bill.items;
         cart = items; renderCart();
-        await deleteHeldBill(bill.id, false); // ลบแบบไม่ต้องยืนยันซ้ำ
+        await deleteHeldBill(bill.id, false);
         $('#heldBillsModal').addClass('hidden');
         alertify.success(`เรียกคืนบิล: ${bill.reference_note || ''}`);
         updateHeldBillCount();
@@ -389,7 +438,6 @@
       }
     }
 
-    // 3. ปรับ DeleteHeldBill ให้รองรับ Alertify
     async function deleteHeldBill(id, refresh = true) {
       const processDelete = async () => {
         try {
@@ -406,10 +454,6 @@
       } else {
         await processDelete();
       }
-    }
-
-    async function updateHeldBillCount() {
-      try { const res = await fetch(`${API_URL}?action=get_held_bills`); const bills = await res.json(); const count = bills.length; if(count > 0) { $('#heldBillCount').text(count).removeClass('hidden'); } else { $('#heldBillCount').addClass('hidden'); } } catch(e) {}
     }
 
     function clearScreen() { cart = []; resetMember(); renderCart(); $('#barcodeInput').focus(); alertify.success('พร้อมขายรายการต่อไป'); }

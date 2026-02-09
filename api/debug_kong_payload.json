@@ -1,18 +1,18 @@
 {
-    "transaction_id": "ORD-202602-00001",
-    "timestamp": "2026-02-09T13:00:37+07:00",
+    "transaction_id": "ORD-202602-00002",
+    "timestamp": "2026-02-09T16:08:09+07:00",
     "shop_id": "BRANCH_001",
     "cashier": "Admin Manager",
     "member_id": null,
-    "total_amount": 15,
+    "total_amount": 22.5,
     "items": [
         {
-            "product_id": 1,
-            "barcode": "8850123",
-            "name": "น้ำอัดลม",
-            "price": 15,
+            "product_id": 2,
+            "barcode": "8850456",
+            "name": "ขนมปัง",
+            "price": 22.5,
             "qty": 1,
-            "line_total": 15
+            "line_total": 22.5
         }
     ]
 }
