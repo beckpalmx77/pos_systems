@@ -11,7 +11,7 @@
  Target Server Version : 90100 (9.1.0)
  File Encoding         : 65001
 
- Date: 07/02/2026 17:45:05
+ Date: 09/02/2026 12:46:09
 */
 
 SET NAMES utf8mb4;
@@ -28,7 +28,7 @@ CREATE TABLE `held_bills`  (
   `total_amount` decimal(10, 2) NULL DEFAULT NULL,
   `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of held_bills
@@ -45,8 +45,8 @@ CREATE TABLE `members`  (
   `points` int NULL DEFAULT 0,
   `created_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `code`(`code`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+  UNIQUE INDEX `code`(`code` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of members
@@ -59,25 +59,26 @@ INSERT INTO `members` VALUES (1, '0812345678', 'คุณสมชาย ใจ�
 DROP TABLE IF EXISTS `menus`;
 CREATE TABLE `menus`  (
   `id` int NOT NULL AUTO_INCREMENT,
+  `menu_id` int NULL DEFAULT 0,
   `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `link` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `icon` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `allowed_roles` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of menus
 -- ----------------------------
-INSERT INTO `menus` VALUES (1, 'หน้าขาย (POS)', 'index.php', 'fa-cash-register', 'admin,staff');
-INSERT INTO `menus` VALUES (2, 'สต็อกสินค้า', 'products.php', 'fa-box', 'admin,staff');
-INSERT INTO `menus` VALUES (3, 'รายงานยอดขาย', 'history.php', 'fa-chart-line', 'admin,staff');
-INSERT INTO `menus` VALUES (4, 'ผู้ใช้งานระบบ', 'users.php', 'fa-users-cog', 'admin');
-INSERT INTO `menus` VALUES (5, 'กำหนดสิทธิ์', 'permissions.php', 'fa-user-lock', 'admin');
-INSERT INTO `menus` VALUES (6, 'จัดการเมนู', 'menus_manage.php', 'fa-list', 'admin');
-INSERT INTO `menus` VALUES (7, 'สมาชิก', 'members.php', 'fa-address-card', 'admin,staff');
-INSERT INTO `menus` VALUES (8, 'นำเข้าข้อมูลสินค้า', 'import_products.php', 'fa fa-table', 'admin,staff');
-INSERT INTO `menus` VALUES (9, 'หมวดหมู่สินค้า', 'categories.php', 'fa fa-bookmark', 'admin,staff');
+INSERT INTO `menus` VALUES (1, 1, 'หน้าขาย (POS)', 'index.php', 'fa-cash-register', 'admin,staff,manager');
+INSERT INTO `menus` VALUES (2, 2, 'สต็อกสินค้า', 'products.php', 'fa-box', 'admin,staff,manager');
+INSERT INTO `menus` VALUES (3, 3, 'หมวดหมู่สินค้า', 'categories.php', 'fa fa-bookmark', 'admin,staff,manager');
+INSERT INTO `menus` VALUES (4, 4, 'นำเข้าข้อมูลสินค้า', 'import_products.php', 'fa fa-table', 'admin,manager');
+INSERT INTO `menus` VALUES (5, 5, 'รายงานยอดขาย', 'history.php', 'fa-chart-line', 'admin,manager');
+INSERT INTO `menus` VALUES (6, 6, 'จัดการเมนู', 'menus_manage.php', 'fa-list', 'admin');
+INSERT INTO `menus` VALUES (7, 7, 'กำหนดสิทธิ์', 'permissions.php', 'fa-user-lock', 'admin');
+INSERT INTO `menus` VALUES (8, 8, 'ผู้ใช้งานระบบ', 'users.php', 'fa-users-cog', 'admin');
+INSERT INTO `menus` VALUES (9, 9, 'สมาชิก', 'members.php', 'fa-address-card', 'admin,staff,manager');
 
 -- ----------------------------
 -- Table structure for order_items
@@ -92,8 +93,8 @@ CREATE TABLE `order_items`  (
   `price` decimal(10, 2) NULL DEFAULT NULL,
   `qty` int NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `order_id`(`order_id`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+  INDEX `order_id`(`order_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of order_items
@@ -111,9 +112,9 @@ CREATE TABLE `orders`  (
   `cashier_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `member_id` int NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `member_id`(`member_id`) USING BTREE,
-  INDEX `doc_id`(`doc_id`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+  INDEX `member_id`(`member_id` ASC) USING BTREE,
+  INDEX `doc_id`(`doc_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of orders
@@ -134,8 +135,8 @@ CREATE TABLE `products`  (
   `min` decimal(10, 2) NULL DEFAULT 0.00,
   `max` decimal(10, 2) NULL DEFAULT 0.00,
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `barcode`(`barcode`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+  UNIQUE INDEX `barcode`(`barcode` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of products
@@ -144,8 +145,8 @@ INSERT INTO `products` VALUES (1, '8850123', 'น้ำอัดลม', '2', 15
 INSERT INTO `products` VALUES (2, '8850456', 'ขนมปัง', '4', 22.50, 20.00, 50.00, 20.00, 60.00);
 INSERT INTO `products` VALUES (3, '9645500', 'ยาสีฟัน', '3', 45.00, 0.00, 0.00, 0.00, 0.00);
 INSERT INTO `products` VALUES (4, '9645501', 'แปรงสีฟัน', '3', 20.00, 0.00, 0.00, 0.00, 0.00);
-INSERT INTO `products` VALUES (5, '9645503', 'ทดสอบ 1', NULL, 0.00, 0.00, 0.00, 0.00, 0.00);
-INSERT INTO `products` VALUES (6, '9645567', 'ทดสอบ 2', NULL, 0.00, 0.00, 0.00, 0.00, 0.00);
+INSERT INTO `products` VALUES (5, '9645503', 'บะหมี่กึ่งสำเร็จรูป', '1', 7.00, 5.00, 0.00, 0.00, 0.00);
+INSERT INTO `products` VALUES (6, '9645567', 'ข้าวกล่อง', '1', 50.00, 30.00, 0.00, 0.00, 0.00);
 
 -- ----------------------------
 -- Table structure for products_categories
@@ -156,7 +157,7 @@ CREATE TABLE `products_categories`  (
   `categories` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `detail` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of products_categories
@@ -177,12 +178,13 @@ CREATE TABLE `users`  (
   `fullname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `role` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = MyISAM AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of users
 -- ----------------------------
 INSERT INTO `users` VALUES (1, 'admin@myadmin.com', 'admin', 'Admin Manager', 'admin');
 INSERT INTO `users` VALUES (2, 'staff', '1234', 'Cashier One', 'staff');
+INSERT INTO `users` VALUES (3, 'manager', '123456', 'Manager', 'manager');
 
 SET FOREIGN_KEY_CHECKS = 1;
