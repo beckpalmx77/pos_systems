@@ -6,7 +6,6 @@
 
   <div class="flex-1 p-6 overflow-hidden flex flex-col">
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
-
       <div class="p-5 border-b bg-gray-50 flex justify-between items-center">
         <h2 class="text-xl font-bold text-gray-700">
           <i class="fas fa-users-cog text-blue-500 mr-2"></i> จัดการผู้ใช้งาน
@@ -42,22 +41,18 @@
 
       <div class="p-6 space-y-4">
         <input type="hidden" id="userId">
-
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
           <input type="text" id="inpUsername" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
-
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
           <input type="password" id="inpPassword" placeholder="(เว้นว่างไว้ถ้าไม่เปลี่ยน)" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
-
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อ-นามสกุล</label>
           <input type="text" id="inpFullname" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
-
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">สิทธิ์การใช้งาน</label>
           <select id="inpRole" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -80,14 +75,19 @@
 
 <script>
   let table;
-  // [สำคัญ] ชี้ไปที่ user_api.php
   const API_URL = 'api/user_api.php';
 
+  // ตั้งค่า Alertify defaults (Optional)
+  alertify.defaults.transition = "zoom";
+  alertify.defaults.theme.ok = "ui positive button";
+  alertify.defaults.theme.cancel = "ui black button";
+
   $(document).ready(function() {
-    // เช็คสิทธิ์ Admin
+    // 1. แก้ Alert ตรวจสิทธิ์
     if(currentUserData && currentUserData.role !== 'admin'){
-      alert('คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
-      window.location.href = 'index.php';
+      alertify.alert('แจ้งเตือน', 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้', function(){
+        window.location.href = 'index.php';
+      });
       return;
     }
 
@@ -109,12 +109,11 @@
           "data": null,
           "className": "text-center",
           "render": function(data, type, row) {
-            // escape double quotes for json safety
             let jsonRow = JSON.stringify(row).replace(/"/g, '&quot;');
             return `
-                            <button onclick="editUser(${jsonRow})" class="text-yellow-500 hover:text-yellow-600 mx-1" title="แก้ไข"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteUser(${row.id})" class="text-red-500 hover:text-red-600 mx-1" title="ลบ"><i class="fas fa-trash"></i></button>
-                        `;
+                <button onclick="editUser(${jsonRow})" class="text-yellow-500 hover:text-yellow-600 mx-1" title="แก้ไข"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteUser(${row.id})" class="text-red-500 hover:text-red-600 mx-1" title="ลบ"><i class="fas fa-trash"></i></button>
+            `;
           }
         }
       ]
@@ -154,27 +153,57 @@
       role: $('#inpRole').val()
     };
 
-    if(!payload.username || !payload.fullname) return alert('กรุณากรอกข้อมูลให้ครบ');
-    if(!payload.id && !payload.password) return alert('กรุณาตั้งรหัสผ่าน');
+    // 2. แก้ Validation เป็น Alertify Error/Warning (ไม่ใช้ return alert)
+    if(!payload.username || !payload.fullname) {
+      alertify.error('กรุณากรอกข้อมูล Username และ ชื่อ-นามสกุล ให้ครบ');
+      return;
+    }
+    if(!payload.id && !payload.password) {
+      alertify.warning('กรุณาตั้งรหัสผ่านสำหรับผู้ใช้ใหม่');
+      return;
+    }
 
     try {
       const res = await fetch(`${API_URL}?action=save_user`, { method: 'POST', body: JSON.stringify(payload) });
       const result = await res.json();
 
       if(result.success) {
-        alert('✅ บันทึกสำเร็จ');
+        // 3. แสดงผลสำเร็จ
+        alertify.success('✅ บันทึกข้อมูลเรียบร้อยแล้ว');
         closeModal();
         table.ajax.reload();
-      } else { alert('Error: ' + result.message); }
-    } catch(e) { alert('Failed to save'); }
+      } else {
+        alertify.error('เกิดข้อผิดพลาด: ' + result.message);
+      }
+    } catch(e) {
+      console.error(e);
+      alertify.error('ไม่สามารถเชื่อมต่อ Server ได้');
+    }
   }
 
-  async function deleteUser(id) {
-    if(!confirm('ยืนยันลบผู้ใช้งานนี้?')) return;
-    try {
-      const res = await fetch(`${API_URL}?action=delete_user`, { method: 'POST', body: JSON.stringify({id}) });
-      if((await res.json()).success) table.ajax.reload();
-      else alert('ลบไม่สำเร็จ');
-    } catch(e) { alert('Error'); }
+  function deleteUser(id) {
+    // 4. แก้ Confirm เป็น Alertify Confirm
+    // Alertify เป็น Asynchronous ต้องใช้ callback function แทนการใช้ if(!confirm) return;
+
+    alertify.confirm('ยืนยันการลบ', 'คุณต้องการลบผู้ใช้งานนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้',
+      async function() { // เมื่อกด OK
+        try {
+          const res = await fetch(`${API_URL}?action=delete_user`, { method: 'POST', body: JSON.stringify({id}) });
+          const result = await res.json();
+
+          if(result.success) {
+            alertify.success('ลบข้อมูลสำเร็จ');
+            table.ajax.reload();
+          } else {
+            alertify.error('ลบไม่สำเร็จ: ' + result.message);
+          }
+        } catch(e) {
+          alertify.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        }
+      },
+      function() { // เมื่อกด Cancel
+        alertify.message('ยกเลิกการลบ');
+      }
+    ).set('labels', {ok:'ลบข้อมูล', cancel:'ยกเลิก'}); // เปลี่ยนข้อความปุ่ม
   }
 </script>

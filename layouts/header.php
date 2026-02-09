@@ -37,3 +37,10 @@
 </div>
 
 <div id="appWrapper" class="hidden flex h-screen">
+
+  <style>
+    /* ปรับสี Alertify ให้เข้ากับธีม */
+    .alertify-notifier .ajs-message.ajs-success { background-color: #10b981; color: white; }
+    .alertify-notifier .ajs-message.ajs-error { background-color: #ef4444; color: white; }
+    .alertify-notifier .ajs-message.ajs-warning { background-color: #f59e0b; color: white; }
+  </style>
