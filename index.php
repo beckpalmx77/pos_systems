@@ -35,13 +35,14 @@
               <input type="text" id="barcodeInput" class="w-full pl-12 pr-4 py-4 border-2 border-blue-500 rounded-lg text-xl focus:outline-none focus:ring-2 focus:ring-blue-300 transition" placeholder="ยิงบาร์โค้ด หรือ พิมพ์รหัส (F4)" autofocus>
             </div>
 
+            <button onclick="triggerSearchProduct()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-lg font-bold shadow transition">
+              <i class="fas fa-check"></i> ตกลง
+            </button>
+
             <button onclick="openProductSearchModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded-lg text-xl font-bold shadow transition flex items-center gap-2" title="ค้นหาสินค้า (F3)">
               <i class="fas fa-search"></i> ค้นหา
             </button>
 
-            <button onclick="triggerSearchProduct()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-lg font-bold shadow transition">
-              <i class="fas fa-check"></i> ตกลง
-            </button>
           </div>
         </div>
 
