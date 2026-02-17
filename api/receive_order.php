@@ -2,6 +2,9 @@
 // ไฟล์นี้อยู่บน Server: 192.168.88.241
 // Path: /pos_systems/api/receive_order.php
 
+// ตั้งค่า Timezone เป็นประเทศไทย
+date_default_timezone_set('Asia/Bangkok');
+
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST");
