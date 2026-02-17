@@ -1,4 +1,8 @@
 <?php
+
+// ตั้งค่า Timezone เป็นประเทศไทย
+date_default_timezone_set('Asia/Bangkok');
+
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET");
