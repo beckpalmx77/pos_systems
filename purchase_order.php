@@ -1,0 +1,337 @@
+<?php include 'layouts/header.php'; ?>
+
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/default.min.css"/>
+  <script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
+
+  <style>
+    /* ปรับแต่งสไตล์ให้เข้ากับระบบจัดซื้อ */
+    .alertify-notifier .ajs-message.ajs-success { background-color: #10b981; color: white; }
+    .alertify-notifier .ajs-message.ajs-error { background-color: #ef4444; color: white; }
+    .ajs-button.ajs-ok { background-color: #10b981 !important; color: white; font-weight: bold; border-radius: 6px; }
+    .ajs-button.ajs-cancel { background-color: #6b7280 !important; color: white; border-radius: 6px; }
+
+    /* สไตล์สำหรับ input ในตาราง */
+    .input-table {
+      @apply w-full border border-gray-300 rounded px-2 py-1 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition;
+    }
+  </style>
+
+<?php include 'layouts/sidebar.php'; ?>
+
+  <main class="flex-1 flex flex-col min-w-0 bg-gray-100">
+    <?php include 'layouts/topbar.php'; ?>
+
+    <div class="flex-1 p-4 overflow-hidden flex flex-col">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden">
+
+        <div class="p-4 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
+          <div class="flex items-center gap-3 flex-1">
+            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-emerald-500 shadow-sm border border-emerald-100">
+              <i class="fas fa-truck-moving text-xl"></i>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider">ผู้จำหน่าย (Supplier)</p>
+              <h3 id="supName" class="text-lg font-bold text-gray-800">โปรดเลือกผู้จำหน่าย</h3>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <select id="supSelect" class="px-4 py-2.5 border border-gray-300 rounded-lg text-sm w-72 shadow-sm focus:ring-2 focus:ring-emerald-500 outline-none" onchange="selectSupplier(this.value)">
+              <option value="">-- ค้นหา/เลือกรายชื่อผู้จำหน่าย --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="p-4 bg-gray-50 border-b border-gray-100">
+          <div class="flex gap-3">
+            <div class="relative flex-1">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i class="fas fa-barcode text-gray-400 text-xl"></i>
+              </div>
+              <input type="text" id="barcodeInput"
+                     class="w-full pl-12 pr-4 py-4 border-2 border-emerald-400 rounded-lg text-xl focus:outline-none focus:ring-4 focus:ring-emerald-100 transition shadow-inner"
+                     placeholder="สแกนบาร์โค้ด หรือพิมพ์รหัสสินค้าเพื่อรับเข้าสต็อก (F4)" autofocus>
+            </div>
+            <button onclick="findProduct()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
+              <i class="fas fa-plus-circle"></i> เพิ่มรายการ
+            </button>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-auto relative">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-100 sticky top-0 shadow-sm z-10">
+            <tr>
+              <th class="py-4 px-6 text-sm font-bold text-gray-600 uppercase">รายการสินค้า</th>
+              <th class="py-4 px-4 text-sm font-bold text-gray-600 text-right uppercase">ต้นทุน/หน่วย</th>
+              <th class="py-4 px-4 text-sm font-bold text-gray-600 text-center uppercase" style="width: 150px;">จำนวนรับ</th>
+              <th class="py-4 px-4 text-sm font-bold text-gray-600 text-right uppercase">รวม (ต้นทุน)</th>
+              <th class="py-4 px-6 text-sm font-bold text-gray-600 text-center uppercase">ลบ</th>
+            </tr>
+            </thead>
+            <tbody id="poTable" class="divide-y divide-gray-100 bg-white">
+            </tbody>
+          </table>
+          <div id="emptyPO" class="flex flex-col items-center justify-center h-64 text-gray-400">
+            <i class="fas fa-file-invoice-dollar text-6xl mb-4 opacity-20"></i>
+            <p class="text-xl font-medium">ยังไม่มีรายการสั่งซื้อ</p>
+            <p class="text-sm">กรุณาเลือกผู้จำหน่ายและสแกนสินค้าเพื่อเริ่มทำรายการ</p>
+          </div>
+        </div>
+
+        <div class="p-6 bg-slate-50 border-t border-gray-200">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <span class="text-gray-500">รวมทั้งหมด:</span>
+              <span id="itemCount" class="text-2xl font-bold text-gray-800 ml-2">0</span>
+              <span class="text-gray-500 ml-1">รายการ</span>
+            </div>
+            <div class="text-right">
+              <p class="text-sm text-gray-500 font-bold uppercase tracking-wider">ยอดเงินรวมสุทธิ</p>
+              <h2 class="text-5xl font-extrabold text-emerald-600">฿<span id="grandTotal">0.00</span></h2>
+            </div>
+          </div>
+
+          <div class="flex gap-4">
+            <button onclick="clearPO()" class="flex-none bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-4 px-8 rounded-xl transition">
+              ล้างหน้าจอ
+            </button>
+            <button onclick="savePO()" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-2xl font-bold py-4 rounded-xl shadow-xl transition transform active:scale-[0.98] flex justify-center items-center gap-3">
+              <i class="fas fa-save"></i> บันทึกใบสั่งซื้อและรับเข้าสต็อก
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const PURCHASE_API = 'api/purchase_api.php';
+    const BASIC_API = 'api/basic_api.php';
+
+    let poCart = [];
+    let selectedSupplierId = null;
+
+    $(document).ready(function() {
+      loadSuppliers();
+
+      // จับเหตุการณ์ Enter ในช่องบาร์โค้ด
+      $('#barcodeInput').on('keypress', function(e) {
+        if(e.which == 13) {
+          e.preventDefault();
+          findProduct();
+        }
+      });
+
+      // Shortcut Key
+      $(document).keydown(function(e) {
+        if(e.key === 'F4') { e.preventDefault(); $('#barcodeInput').focus(); }
+      });
+    });
+
+    // 1. โหลดรายชื่อผู้จำหน่าย
+    async function loadSuppliers() {
+      try {
+        const res = await fetch(`${PURCHASE_API}?action=get_suppliers`);
+        const sups = await res.json();
+        const select = $('#supSelect');
+        sups.forEach(s => {
+          select.append(`<option value="${s.id}">${s.name} ${s.phone ? '('+s.phone+')' : ''}</option>`);
+        });
+      } catch (err) {
+        console.error("Load Suppliers Error:", err);
+      }
+    }
+
+    // 2. เลือกผู้จำหน่าย
+    function selectSupplier(id) {
+      selectedSupplierId = id;
+      const name = $("#supSelect option:selected").text();
+      if(id) {
+        $('#supName').text(name).addClass('text-emerald-600').removeClass('text-gray-800');
+        $('#barcodeInput').focus();
+      } else {
+        $('#supName').text('โปรดเลือกผู้จำหน่าย').removeClass('text-emerald-600').addClass('text-gray-800');
+      }
+    }
+
+    // 3. ค้นหาสินค้าจากบาร์โค้ด
+    async function findProduct() {
+      const barcode = $('#barcodeInput').val().trim();
+      if(!barcode) return;
+
+      try {
+        const res = await fetch(`${BASIC_API}?action=get_product&barcode=${barcode}`);
+        const result = await res.json();
+
+        if(result.found) {
+          addProductToPO(result.data);
+          $('#barcodeInput').val('');
+        } else {
+          alertify.error('ไม่พบสินค้า: ' + barcode);
+          $('#barcodeInput').select();
+        }
+      } catch (err) {
+        alertify.error('การเชื่อมต่อ API ผิดพลาด');
+      }
+    }
+
+    // 4. เพิ่มสินค้าลงในรายการ (ถ้าซ้ำให้บวกจำนวน)
+    function addProductToPO(p) {
+      const existIdx = poCart.findIndex(i => i.barcode === p.barcode);
+
+      if(existIdx !== -1) {
+        poCart[existIdx].qty++;
+      } else {
+        poCart.push({
+          id: p.id,
+          barcode: p.barcode,
+          name: p.name,
+          cost: parseFloat(p.cost_price) || 0,
+          qty: 1
+        });
+      }
+      renderTable();
+      alertify.success('เพิ่มรายการ: ' + p.name);
+    }
+
+    // 5. แสดงผลตาราง
+    function renderTable() {
+      const tbody = $('#poTable');
+      tbody.empty();
+      let total = 0;
+
+      if(poCart.length > 0) {
+        $('#emptyPO').addClass('hidden');
+      } else {
+        $('#emptyPO').removeClass('hidden');
+      }
+
+      poCart.forEach((item, idx) => {
+        const rowSum = item.cost * item.qty;
+        total += rowSum;
+
+        tbody.append(`
+                <tr class="hover:bg-emerald-50 transition border-b group">
+                    <td class="py-4 px-6">
+                        <div class="font-bold text-gray-800">${item.name}</div>
+                        <div class="text-xs text-gray-400 font-mono">${item.barcode}</div>
+                    </td>
+                    <td class="py-4 px-4 text-right">
+                        <input type="number" step="0.01" value="${item.cost}"
+                               onchange="updateRow(${idx}, 'cost', this.value)"
+                               class="w-32 text-right border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </td>
+                    <td class="py-4 px-4 text-center">
+                        <div class="inline-flex items-center border rounded shadow-sm bg-white">
+                            <button onclick="changeQty(${idx}, -1)" class="px-3 py-1 text-gray-500 hover:bg-gray-100">-</button>
+                            <input type="number" value="${item.qty}"
+                                   onchange="updateRow(${idx}, 'qty', this.value)"
+                                   class="w-16 text-center border-none focus:ring-0 font-bold text-gray-700">
+                            <button onclick="changeQty(${idx}, 1)" class="px-3 py-1 text-gray-500 hover:bg-gray-100">+</button>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 text-right font-bold text-emerald-600 text-lg">
+                        ${rowSum.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                    </td>
+                    <td class="py-4 px-6 text-center">
+                        <button onclick="removeItem(${idx})" class="text-red-400 hover:text-red-600 transition">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+            `);
+      });
+
+      $('#grandTotal').text(total.toLocaleString(undefined, {minimumFractionDigits: 2}));
+      $('#itemCount').text(poCart.length);
+    }
+
+    // 6. ฟังก์ชันจัดการแถวสินค้า
+    function updateRow(idx, field, val) {
+      let value = parseFloat(val);
+      if(field === 'qty' && value < 1) value = 1;
+      poCart[idx][field] = value || 0;
+      renderTable();
+    }
+
+    function changeQty(idx, delta) {
+      if(poCart[idx].qty + delta >= 1) {
+        poCart[idx].qty += delta;
+        renderTable();
+      }
+    }
+
+    function removeItem(idx) {
+      alertify.confirm('ลบรายการ', `ยืนยันการลบ ${poCart[idx].name}?`,
+        function() {
+          poCart.splice(idx, 1);
+          renderTable();
+          alertify.error('ลบรายการแล้ว');
+        }, function(){}
+      );
+    }
+
+    function clearPO() {
+      if(poCart.length === 0) return;
+      alertify.confirm('ล้างรายการ', 'ต้องการยกเลิกรายการจัดซื้อทั้งหมดหรือไม่?',
+        function() {
+          poCart = [];
+          renderTable();
+        }, function(){}
+      );
+    }
+
+    // 7. บันทึกใบสั่งซื้อเข้า Database
+    async function savePO() {
+      if(!selectedSupplierId) {
+        alertify.error('กรุณาเลือกผู้จำหน่ายก่อนบันทึก');
+        $('#supSelect').focus();
+        return;
+      }
+      if(poCart.length === 0) {
+        alertify.error('ไม่มีสินค้าในรายการจัดซื้อ');
+        $('#barcodeInput').focus();
+        return;
+      }
+
+      alertify.confirm('ยืนยันบันทึกจัดซื้อ',
+        `<div class='text-center'>ยอดเงินรวมทั้งหมด <br><b class='text-2xl text-emerald-600'>฿ ${$('#grandTotal').text()}</b><br>ต้องการบันทึกและเพิ่มสต็อกใช่หรือไม่?</div>`,
+        async function() {
+          const payload = {
+            supplier_id: selectedSupplierId,
+            total: parseFloat($('#grandTotal').text().replace(/,/g,'')),
+            items: poCart,
+            user: 'Admin' // สามารถเปลี่ยนเป็นชื่อ user จากระบบได้
+          };
+
+          try {
+            const res = await fetch(`${PURCHASE_API}?action=receive_stock`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+
+            if(result.success) {
+              alertify.alert('บันทึกสำเร็จ',
+                `เลขที่ใบสั่งซื้อ: <b>${result.po_number}</b><br>อัปเดตสต็อกสินค้าเรียบร้อยแล้ว`,
+                function() {
+                  poCart = [];
+                  renderTable();
+                  $('#supSelect').val('').change();
+                  $('#barcodeInput').focus();
+                }
+              );
+            } else {
+              alertify.error('ผิดพลาด: ' + result.message);
+            }
+          } catch (err) {
+            alertify.error('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+          }
+        }, function(){}
+      ).set('labels', {ok:'ยืนยันบันทึก (Receive)', cancel:'ตรวจสอบอีกครั้ง'});
+    }
+  </script>
+
+<?php include 'layouts/footer.php'; ?>

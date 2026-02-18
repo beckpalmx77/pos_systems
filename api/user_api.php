@@ -3,6 +3,9 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET");
 
+// เริ่ม session เพื่อใช้ตรวจสอบ user_id ในการเปลี่ยนรหัสผ่าน และเก็บสถานะการ Login
+session_start();
+
 require_once '../config/connect_db.php';
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -31,7 +34,12 @@ try {
       $user = $stmt->fetch();
 
       if ($user) {
-        unset($user['password']); // ลบรหัสผ่านออกเพื่อความปลอดภัย
+        // เก็บข้อมูลลง Session สำหรับการเช็คสิทธิ์ในหน้าอื่นๆ และใช้เปลี่ยนรหัสผ่าน
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['role'] = $user['role'];
+
+        unset($user['password']); // ลบรหัสผ่านออกเพื่อความปลอดภัยก่อนส่งกลับหน้าบ้าน
         echo json_encode(["success" => true, "user" => $user]);
       } else {
         echo json_encode(["success" => false, "message" => "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"]);
@@ -40,7 +48,7 @@ try {
 
     // 2. GET MENUS (ดึงเมนูตามสิทธิ์ของผู้ใช้คนนั้น)
     case 'get_menus':
-      $role = $_GET['role'];
+      $role = $_GET['role'] ?? '';
       $search = "%$role%";
       $stmt = $conn->prepare("SELECT * FROM menus WHERE allowed_roles LIKE ?");
       $stmt->execute([$search]);
@@ -61,11 +69,11 @@ try {
 
     // 4. SAVE USER (เพิ่มใหม่ หรือ แก้ไข)
     case 'save_user':
-      $id = isset($request_data['id']) ? $request_data['id'] : '';
-      $username = $request_data['username'];
-      $password = $request_data['password'];
-      $fullname = $request_data['fullname'];
-      $role = $request_data['role'];
+      $id = $request_data['id'] ?? '';
+      $username = $request_data['username'] ?? '';
+      $password = $request_data['password'] ?? '';
+      $fullname = $request_data['fullname'] ?? '';
+      $role = $request_data['role'] ?? '';
 
       if (empty($id)) {
         // -- INSERT (เพิ่มผู้ใช้ใหม่) --
@@ -102,7 +110,7 @@ try {
 
     // 5. DELETE USER
     case 'delete_user':
-      $id = $request_data['id'];
+      $id = $request_data['id'] ?? '';
       $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
       if($stmt->execute([$id])) {
         echo json_encode(["success" => true]);
@@ -125,40 +133,71 @@ try {
 
     // 7. SAVE PERMISSION (บันทึกการกำหนดสิทธิ์)
     case 'save_permission':
-      $target_role = $request_data['role']; // เช่น 'staff'
-      $allowed_menu_ids = $request_data['menu_ids']; // array ของ id เมนูที่ติ๊กถูก [1, 3, 5]
+      $target_role = $request_data['role'] ?? '';
+      $allowed_menu_ids = $request_data['menu_ids'] ?? [];
 
-      // ดึงข้อมูลเมนูทั้งหมดมาเพื่อวนลูปเช็คทีละอัน
       $stmt = $conn->prepare("SELECT id, allowed_roles FROM menus");
       $stmt->execute();
       $all_menus = $stmt->fetchAll();
 
       foreach ($all_menus as $menu) {
-        // แปลง string "admin,staff" เป็น array ["admin", "staff"]
         $current_roles = array_filter(explode(',', $menu['allowed_roles']));
-
-        // ตรวจสอบว่าเมนูนี้ (id) ถูกติ๊กเลือกมาหรือไม่
         $is_allowed = in_array($menu['id'], $allowed_menu_ids);
 
         if ($is_allowed) {
-          // ถ้าติ๊กถูก -> ต้องตรวจสอบว่ามี role นี้ใน DB หรือยัง ถ้ายังไม่มีให้เพิ่ม
           if (!in_array($target_role, $current_roles)) {
             $current_roles[] = $target_role;
           }
         } else {
-          // ถ้าไม่ติ๊ก (ติ๊กออก) -> ต้องลบ role นี้ออกจาก DB
           $current_roles = array_diff($current_roles, [$target_role]);
         }
 
-        // แปลง array กลับเป็น string เพื่อบันทึก เช่น "admin,staff"
         $new_roles_str = implode(',', $current_roles);
-
-        // อัปเดตลง Database
         $update = $conn->prepare("UPDATE menus SET allowed_roles = ? WHERE id = ?");
         $update->execute([$new_roles_str, $menu['id']]);
       }
 
       echo json_encode(["success" => true, "message" => "บันทึกสิทธิ์เรียบร้อย"]);
+      break;
+
+
+    // -----------------------------------------------------------------------
+    // GROUP 4: SELF-SERVICE
+    // -----------------------------------------------------------------------
+
+    // 8. CHANGE PASSWORD (สำหรับผู้ใช้งานเปลี่ยนเอง)
+    case 'change_password':
+      $user_id = $_SESSION['user_id'] ?? '';
+      $old_pass = $request_data['old_password'] ?? '';
+      $new_pass = $request_data['new_password'] ?? '';
+
+      if (empty($user_id)) {
+        echo json_encode(["success" => false, "message" => "เซสชั่นหมดอายุ กรุณาเข้าสู่ระบบใหม่"]);
+        break;
+      }
+
+      if (empty($old_pass) || empty($new_pass)) {
+        echo json_encode(["success" => false, "message" => "กรุณากรอกข้อมูลให้ครบ"]);
+        break;
+      }
+
+      // ตรวจสอบรหัสผ่านปัจจุบัน
+      $stmt = $conn->prepare("SELECT id FROM users WHERE id = ? AND password = ?");
+      $stmt->execute([$user_id, $old_pass]);
+      $user = $stmt->fetch();
+
+      if (!$user) {
+        echo json_encode(["success" => false, "message" => "รหัสผ่านปัจจุบันไม่ถูกต้อง"]);
+        break;
+      }
+
+      // อัปเดตรหัสผ่านใหม่
+      $update = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
+      if ($update->execute([$new_pass, $user_id])) {
+        echo json_encode(["success" => true, "message" => "เปลี่ยนรหัสผ่านสำเร็จ"]);
+      } else {
+        echo json_encode(["success" => false, "message" => "เกิดข้อผิดพลาดในระบบฐานข้อมูล"]);
+      }
       break;
 
     default:

@@ -1,0 +1,34 @@
+{
+    "transaction_id": "ORD-202602-00008",
+    "timestamp": "2026-02-17T16:54:08+07:00",
+    "shop_id": "BRANCH_001",
+    "cashier": "Admin Manager",
+    "member_id": 1,
+    "total_amount": 80,
+    "items": [
+        {
+            "product_id": 1,
+            "barcode": "8850123",
+            "name": "น้ำอัดลม",
+            "price": 15,
+            "qty": 1,
+            "line_total": 15
+        },
+        {
+            "product_id": 3,
+            "barcode": "9645500",
+            "name": "ยาสีฟัน",
+            "price": 45,
+            "qty": 1,
+            "line_total": 45
+        },
+        {
+            "product_id": 4,
+            "barcode": "9645501",
+            "name": "แปรงสีฟัน",
+            "price": 20,
+            "qty": 1,
+            "line_total": 20
+        }
+    ]
+}
