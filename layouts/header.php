@@ -26,7 +26,6 @@
         <i class="fas fa-cash-register"></i>
       </div>
       <h2 class="text-2xl font-bold text-gray-800">เข้าสู่ระบบ POS</h2>
-      <p class="text-xs text-gray-400 mt-2">admin/1234</p>
     </div>
     <div class="space-y-4">
       <input type="text" id="l_username" class="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none" placeholder="Username">

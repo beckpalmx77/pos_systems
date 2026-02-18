@@ -1,10 +1,11 @@
-</div> <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
 
 <script>
   // --- Config Alertify ---
-  if(typeof alertify !== 'undefined') {
+  if (typeof alertify !== 'undefined') {
     alertify.defaults.transition = "zoom";
     alertify.defaults.theme.ok = "ui positive button";
     alertify.defaults.theme.cancel = "ui black button";
@@ -16,11 +17,11 @@
 
   // กำหนด URL API
   const USER_API = 'api/user_api.php';
-  const POS_API  = 'api/basic_api.php';
+  const POS_API = 'api/basic_api.php';
 
   let currentUserData = null;
 
-  $(document).ready(function() {
+  $(document).ready(function () {
     // 1. เช็ค Login
     checkLoginState();
 
@@ -51,7 +52,7 @@
     const finalString = `${dayName} , ${date} ${monthName} ${year} เวลา ${h}:${m}:${s}`;
 
     const timeDisplay = document.getElementById('systemTime');
-    if(timeDisplay) {
+    if (timeDisplay) {
       timeDisplay.innerText = finalString;
     }
   }
@@ -65,7 +66,7 @@
       $('#appWrapper').removeClass('hidden');
 
       const userDisplay = document.getElementById('currentUser');
-      if(userDisplay) userDisplay.innerText = currentUserData.fullname;
+      if (userDisplay) userDisplay.innerText = currentUserData.fullname;
 
       loadMenus(currentUserData.role);
     } else {
@@ -80,13 +81,18 @@
     try {
       const res = await fetch(`${USER_API}?action=login`, {
         method: 'POST',
-        body: JSON.stringify({ username: u, password: p })
+        body: JSON.stringify({username: u, password: p})
       });
       const data = await res.json();
       if (data.success) {
         localStorage.setItem('pos_user', JSON.stringify(data.user));
         alertify.success('เข้าสู่ระบบสำเร็จ'); // แจ้งเตือนมุมขวาล่าง
         checkLoginState();
+
+        setTimeout(() => {
+          window.location.href = 'index';
+        }, 1000); // หน่วงเวลา 1 วินาทีเพื่อให้ User เห็น Success Message
+
       } else {
         alertify.alert('เข้าสู่ระบบไม่สำเร็จ', data.message);
       }
@@ -98,15 +104,19 @@
   // [แก้ไข] ใช้ Alertify Confirm แทน confirm ธรรมดา
   function logout() {
     alertify.confirm('ออกจากระบบ', 'ยืนยันที่จะออกจากระบบหรือไม่?',
-      function() {
+      function () {
         // เมื่อกด "ตกลง"
         localStorage.removeItem('pos_user');
-        window.location.href = 'index.php';
+        window.location.href = 'index';
       },
-      function() {
+      function () {
         // เมื่อกด "ยกเลิก" (ไม่ต้องทำอะไร)
       }
-    ).set('labels', {ok:'ออกจากระบบ', cancel:'ยกเลิก'});
+    ).set('labels', {ok: 'ออกจากระบบ', cancel: 'ยกเลิก'});
+  }
+
+  function dashboard() {
+        window.location.href = 'index';
   }
 
   async function loadMenus(role) {
@@ -115,7 +125,7 @@
       const menus = await res.json();
       const list = document.getElementById('menuList');
 
-      if(list) {
+      if (list) {
         list.innerHTML = '';
         const currentPage = window.location.pathname.split("/").pop();
 
@@ -133,7 +143,9 @@
             </li>`;
         });
       }
-    } catch(e) { console.error("Menu Load Error:", e); }
+    } catch (e) {
+      console.error("Menu Load Error:", e);
+    }
   }
 </script>
 
