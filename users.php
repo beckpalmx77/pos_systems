@@ -58,6 +58,8 @@
           <select id="inpRole" class="w-full border border-gray-300 px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="staff">Staff (พนักงานขาย)</option>
             <option value="admin">Admin (ผู้ดูแลระบบ)</option>
+            <option value="manager">Manager (ผู้จัดการ)</option>
+            <option value="customer">Customer (ลูกค้า)</option>
           </select>
         </div>
       </div>
@@ -100,9 +102,18 @@
         {
           "data": "role",
           "render": function(data) {
-            return data === 'admin'
-              ? '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">Admin</span>'
-              : '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Staff</span>';
+            // กำหนดสไตล์และข้อความของแต่ละ Role
+            const roles = {
+              'admin':    { label: 'Admin',    class: 'bg-red-100 text-red-700' },
+              'manager':  { label: 'Manager',  class: 'bg-purple-100 text-purple-700' },
+              'staff':    { label: 'Staff',    class: 'bg-blue-100 text-blue-700' },
+              'customer': { label: 'Customer', class: 'bg-green-100 text-green-700' }
+            };
+
+            // ดึงข้อมูลตาม data ที่ส่งมา ถ้าไม่มีในลิสต์ให้ใช้ค่า Default (เช่น Guest หรือ User ทั่วไป)
+            const role = roles[data.toLowerCase()] || { label: data, class: 'bg-gray-100 text-gray-700' };
+
+            return `<span class="${role.class} px-2 py-1 rounded text-xs font-bold">${role.label}</span>`;
           }
         },
         {

@@ -19,6 +19,8 @@
           <select id="selectRole" class="border border-gray-300 rounded px-3 py-2 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
             <option value="staff">Staff (พนักงานขาย)</option>
             <option value="admin">Admin (ผู้ดูแลระบบ)</option>
+            <option value="manager">Manager (ผู้จัดการ)</option>
+            <option value="customer">Customer (ลูกค้า)</option>
           </select>
           <span class="text-sm text-gray-500">* เลือกตำแหน่งเพื่อดูหรือแก้ไขสิทธิ์</span>
         </div>

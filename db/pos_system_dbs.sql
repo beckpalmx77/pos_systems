@@ -1,7 +1,7 @@
 /*
  Navicat Premium Dump SQL
 
- Source Server         : MySQL-Localhost
+ Source Server         : Mysql-192.168.88.40
  Source Server Type    : MySQL
  Source Server Version : 90100 (9.1.0)
  Source Host           : 192.168.88.40:3307
@@ -11,7 +11,7 @@
  Target Server Version : 90100 (9.1.0)
  File Encoding         : 65001
 
- Date: 09/02/2026 12:54:01
+ Date: 19/02/2026 12:55:57
 */
 
 SET NAMES utf8mb4;
@@ -65,20 +65,22 @@ CREATE TABLE `menus`  (
   `icon` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `allowed_roles` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of menus
 -- ----------------------------
-INSERT INTO `menus` VALUES (1, 1, 'หน้าขาย (POS)', 'index.php', 'fa-cash-register', 'admin,staff,manager');
-INSERT INTO `menus` VALUES (2, 2, 'สต็อกสินค้า', 'products.php', 'fa-box', 'admin,staff,manager');
-INSERT INTO `menus` VALUES (3, 3, 'หมวดหมู่สินค้า', 'categories.php', 'fa fa-bookmark', 'admin,staff,manager');
-INSERT INTO `menus` VALUES (4, 4, 'นำเข้าข้อมูลสินค้า', 'import_products.php', 'fa fa-table', 'admin,manager');
-INSERT INTO `menus` VALUES (5, 5, 'รายงานยอดขาย', 'history.php', 'fa-chart-line', 'admin,manager');
-INSERT INTO `menus` VALUES (6, 6, 'จัดการเมนู', 'menus_manage.php', 'fa-list', 'admin');
-INSERT INTO `menus` VALUES (7, 7, 'กำหนดสิทธิ์', 'permissions.php', 'fa-user-lock', 'admin');
-INSERT INTO `menus` VALUES (8, 8, 'ผู้ใช้งานระบบ', 'users.php', 'fa-users-cog', 'admin');
-INSERT INTO `menus` VALUES (9, 9, 'สมาชิก', 'members.php', 'fa-address-card', 'admin,staff,manager');
+INSERT INTO `menus` VALUES (1, 1, 'หน้าขาย (POS)', 'pos_page', 'fa-cash-register', 'admin,staff,manager');
+INSERT INTO `menus` VALUES (2, 2, 'สต็อกสินค้า', 'products', 'fa-box', 'admin,staff,manager');
+INSERT INTO `menus` VALUES (3, 3, 'หมวดหมู่สินค้า', 'categories', 'fa fa-bookmark', 'admin,staff,manager');
+INSERT INTO `menus` VALUES (4, 4, 'นำเข้าข้อมูลสินค้า', 'import_products', 'fa fa-table', 'admin,manager');
+INSERT INTO `menus` VALUES (5, 5, 'รายงานยอดขาย', 'history', 'fa-chart-line', 'admin,manager');
+INSERT INTO `menus` VALUES (6, 6, 'การสั่งซื้อ', 'purchase_order', 'fa fa-shopping-cart', 'admin,manager');
+INSERT INTO `menus` VALUES (7, 7, 'จัดการเมนู', 'menus_manage', 'fa-list', 'admin');
+INSERT INTO `menus` VALUES (8, 8, 'กำหนดสิทธิ์', 'permissions', 'fa-user-lock', 'admin');
+INSERT INTO `menus` VALUES (9, 9, 'ผู้ใช้งานระบบ', 'users', 'fa-users-cog', 'admin');
+INSERT INTO `menus` VALUES (10, 10, 'สมาชิก', 'members', 'fa-address-card', 'admin,staff,manager');
+INSERT INTO `menus` VALUES (11, 11, 'เปลี่ยนรหัสผ่าน', 'change_password', 'fa fa-key', 'admin,staff,manager');
 
 -- ----------------------------
 -- Table structure for order_items
@@ -157,7 +159,7 @@ CREATE TABLE `products_categories`  (
   `categories` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `detail` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of products_categories
@@ -178,7 +180,7 @@ CREATE TABLE `users`  (
   `fullname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `role` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of users
@@ -186,5 +188,6 @@ CREATE TABLE `users`  (
 INSERT INTO `users` VALUES (1, 'admin@myadmin.com', 'admin', 'Admin Manager', 'admin');
 INSERT INTO `users` VALUES (2, 'staff', '1234', 'Cashier One', 'staff');
 INSERT INTO `users` VALUES (3, 'manager', '123456', 'Manager', 'manager');
+INSERT INTO `users` VALUES (4, 'cust1', '123456', 'customer', 'customer');
 
 SET FOREIGN_KEY_CHECKS = 1;
