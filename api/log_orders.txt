@@ -24,3 +24,8 @@ Transaction ID: ORD-202602-00007
 Amount: 57
 Raw Data: {"transaction_id":"ORD-202602-00007","timestamp":"2026-02-17T16:47:27+07:00","shop_id":"BRANCH_001","cashier":"Admin Manager","member_id":1,"total_amount":57,"items":[{"product_id":5,"barcode":"9645503","name":"\u0e1a\u0e30\u0e2b\u0e21\u0e35\u0e48\u0e01\u0e36\u0e48\u0e07\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08\u0e23\u0e39\u0e1b","price":7,"qty":1,"line_total":7},{"product_id":6,"barcode":"9645567","name":"\u0e02\u0e49\u0e32\u0e27\u0e01\u0e25\u0e48\u0e2d\u0e07","price":50,"qty":1,"line_total":50}]}
 
+--- Received Order at 2026-02-17 16:54:08 ---
+Transaction ID: ORD-202602-00008
+Amount: 80
+Raw Data: {"transaction_id":"ORD-202602-00008","timestamp":"2026-02-17T16:54:08+07:00","shop_id":"BRANCH_001","cashier":"Admin Manager","member_id":1,"total_amount":80,"items":[{"product_id":1,"barcode":"8850123","name":"\u0e19\u0e49\u0e33\u0e2d\u0e31\u0e14\u0e25\u0e21","price":15,"qty":1,"line_total":15},{"product_id":3,"barcode":"9645500","name":"\u0e22\u0e32\u0e2a\u0e35\u0e1f\u0e31\u0e19","price":45,"qty":1,"line_total":45},{"product_id":4,"barcode":"9645501","name":"\u0e41\u0e1b\u0e23\u0e07\u0e2a\u0e35\u0e1f\u0e31\u0e19","price":20,"qty":1,"line_total":20}]}
+
